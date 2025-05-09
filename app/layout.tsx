@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/navbar";
+import ApplicationClientWrapper from "@/provider/application.wrapper";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
@@ -31,36 +32,6 @@ export const metadata: Metadata = {
   ],
   creator: "SpendIt",
   publisher: "SpendIt",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "/",
-    title: "SpendIt - Financial Tracking App",
-    description: "Track your expenses, subscriptions, and loans with ease",
-    siteName: "SpendIt",
-    images: [
-      {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 650,
-        alt: "SpendIt - Track your finances with ease",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "SpendIt - Financial Tracking App",
-    description: "Track your expenses, subscriptions, and loans with ease",
-    creator: "@spendit",
-    images: [
-      {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 650,
-        alt: "SpendIt - Track your finances with ease",
-      },
-    ],
-  },
 };
 
 export default function RootLayout({
@@ -73,9 +44,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
-        {children}
-        <Toaster />
+        <ApplicationClientWrapper>
+          <Navbar />
+          {children}
+          <Toaster />
+        </ApplicationClientWrapper>
       </body>
     </html>
   );

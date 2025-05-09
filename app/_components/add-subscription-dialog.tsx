@@ -112,10 +112,10 @@ export function AddSubscriptionDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-[#0A2647] hover:bg-[#0A2647]/90 text-white gap-2 rounded-md">
-          <Plus className="h-4 w-4" />
-          Add Subscription
+      <DialogTrigger>
+        <Button>
+          <Plus className="sm:mr-2 h-4 w-4" />
+          <span className="hidden sm:inline">Add Subscription</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
