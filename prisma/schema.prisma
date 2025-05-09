@@ -18,7 +18,7 @@ model User {
   name             String
   email            String         @unique
   whatsappVerified Boolean        @default(false)
-  whatsappNumber   String         @unique
+  whatsappNumber   String?        @unique
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   givenLoans       LoanModel[]    @relation("GivenLoans")
@@ -43,17 +43,18 @@ model LoanModel {
 }
 
 model Subscription {
-  id                 String      @id @default(uuid())
+  id                 String                    @id @default(uuid())
   name               String
   amount             Int
   renewalDate        DateTime
   currency           AppCurrency
-  hasVariableCharges Boolean     @default(false)
-  isActive           Boolean     @default(true)
+  renewInterval      SubscriptionRenewInterval @default(MONTHLY)
+  hasVariableCharges Boolean                   @default(false)
+  isActive           Boolean                   @default(true)
   userId             String
-  user               User        @relation(fields: [userId], references: [id])
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  user               User                      @relation(fields: [userId], references: [id])
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
 }
 
 enum AppCurrency {
@@ -61,4 +62,11 @@ enum AppCurrency {
   USD
   EUR
   GBP
+}
+
+enum SubscriptionRenewInterval {
+  MONTHLY
+  YEARLY
+  QUARTERLY
+  HALF_YEARLY
 }

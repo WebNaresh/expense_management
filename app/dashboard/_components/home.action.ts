@@ -1,31 +1,49 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SubscriptionFormValues } from "./add-subscription-dialog";
 
 
-export async function getSubscriptions() {
-    const subscriptions = await prisma.subscription.findMany();
+export async function getSubscriptions(userId: string) {
+    console.log(`🚀 ~ userId:`, userId)
+    const subscriptions = await prisma.subscription.findMany({
+        where: {
+            userId: userId,
+        },
+    });
     return subscriptions;
 }
 
 export async function addSubscription(data: SubscriptionFormValues) {
-    const user = await auth();
-    if (!user?.user.id) {
-        throw new Error("User is not authenticated");
-    }
+    console.log(`🚀 ~ data:`, data)
+
     const subscription = await prisma.subscription.create({
         data: {
             name: data.name,
             amount: data.amount,
-            renewalDate: data.renewalDate,
+            renewalDate: new Date(data.renewalDate),
             currency: data.currency,
             hasVariableCharges: data.hasVariableCharges,
             isActive: data.isActive,
-            userId: user?.user.id,
+            renewInterval: data.renewInterval,
+            userId: data.userId,
         }
     });
+    console.log(`🚀 ~ subscription:`, subscription)
     return subscription;
+}
+
+export async function deleteSubscription(id: string) {
+    try {
+        const deletedSubscription = await prisma.subscription.delete({
+            where: {
+                id: id
+            }
+        });
+        return { success: true, data: deletedSubscription };
+    } catch (error) {
+        console.error("Error deleting subscription:", error);
+        return { success: false, error: "Failed to delete subscription" };
+    }
 }
 

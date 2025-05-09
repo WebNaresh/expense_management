@@ -6,5 +6,6 @@ declare namespace NodeJS {
     NEXT_WHATSAPP_API_ACCESS_TOKEN: string;
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: string;
     NEXT_PUBLIC_GOOGLE_CLIENT_SECRET: string;
+    NODE_ENV: "development" | "production";
   }
 }

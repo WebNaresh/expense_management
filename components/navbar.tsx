@@ -32,13 +32,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const navLinks = [
-  { href: "/", label: "Dashboard", icon: Home },
+// Navigation links for authenticated users
+const protectedNavLinks = [
+  { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/loans", label: "Loans", icon: Wallet },
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+
+// Navigation links for public routes (all users)
+const publicNavLinks = [{ href: "/", label: "Home", icon: Home }];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,6 +50,9 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
+
+  // Determine which nav links to show based on authentication status
+  const navLinks = session ? protectedNavLinks : publicNavLinks;
 
   useEffect(() => {
     setMounted(true);
@@ -66,11 +73,13 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full">
+    <header className="sticky top-0 z-50 w-full flex items-center justify-center">
       <div
         className={cn(
           "absolute inset-0 border-b border-white/10 backdrop-blur-md transition-colors duration-200",
-          isScrolled ? "bg-white/5" : "bg-[#1ab57e]"
+          isScrolled
+            ? "bg-white/5 border-b-2 border-white/10"
+            : "bg-[#1ab57e] border-b-2 border-white/10"
         )}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-white/15 to-white/5 pointer-events-none" />
@@ -80,19 +89,16 @@ export function Navbar() {
             href="/"
             className="flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] pl-2"
           >
-            <div className="relative group h-10 w-10">
-              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-20 group-hover:opacity-30 blur transition duration-200" />
-              <Image
-                src="/logo.png"
-                alt="SpendIt"
-                width={100}
-                height={100}
-                className="relative top-0 rounded-lg object-cover h-20 w-20"
-              />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="SpendIt"
+              width={45}
+              height={45}
+              className="relative top-0 rounded-lg object-cover bg-white p-1"
+            />
             <span
               className={cn(
-                "text-xl font-bold transition-colors duration-200",
+                "text-2xl font-bold transition-colors duration-200",
                 isScrolled
                   ? "bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500"
                   : "text-white"

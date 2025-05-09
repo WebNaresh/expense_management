@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AppCurrency } from "@prisma/client";
+import { AppCurrency, SubscriptionRenewInterval } from "@prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Calendar as CalendarIcon2,
@@ -24,10 +25,11 @@ import {
   Tags,
   ToggleLeft,
 } from "lucide-react";
-import { useState } from "react";
+import { useQueryState } from "nuqs";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { addSubscription } from "./home.action";
 
 const categories = [
   { label: "Entertainment", value: "entertainment" },
@@ -60,50 +62,82 @@ const formSchema = z.object({
       required_error: "Please select a category.",
     }
   ),
-  renewalDate: z.date({
+  renewalDate: z.string({
     required_error: "Please select a renewal date.",
   }),
   isActive: z.boolean(),
   hasVariableCharges: z.boolean(),
   currency: z.nativeEnum(AppCurrency),
+  renewInterval: z.nativeEnum(SubscriptionRenewInterval),
+  userId: z.string(),
 });
 
 export type SubscriptionFormValues = z.infer<typeof formSchema>;
 
-export function AddSubscriptionDialog() {
-  const [open, setOpen] = useState(false);
+// Define simplified user type that only requires the id
+type UserWithId = {
+  id: string;
+};
+
+export function AddSubscriptionDialog({
+  user,
+}: {
+  user: UserWithId | null | undefined;
+}) {
+  const [open, setOpen] = useQueryState("open", {
+    defaultValue: false,
+    parse: (value) => value === "true",
+    scroll: false,
+  });
 
   const form = useForm<SubscriptionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      amount: 0,
-      category: "entertainment",
-      renewalDate: new Date(),
+      name: process.env.NODE_ENV === "development" ? "Netflix" : "",
+      amount: process.env.NODE_ENV === "development" ? 499 : 0,
+      category:
+        process.env.NODE_ENV === "development"
+          ? "entertainment"
+          : "productivity",
+      renewalDate: new Date().toISOString().split("T")[0],
       isActive: true,
-      hasVariableCharges: false,
+      hasVariableCharges: true,
       currency: AppCurrency.INR,
+      renewInterval: SubscriptionRenewInterval.MONTHLY,
+      userId: user?.id,
+    },
+  });
+  const queryClient = useQueryClient();
+  const { mutate: createSubscription } = useMutation({
+    mutationFn: async (data: SubscriptionFormValues) =>
+      await addSubscription(data),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["subscriptions", user?.id],
+      });
+      toast.success("Subscription created successfully");
+      form.reset({
+        name: process.env.NODE_ENV === "development" ? "Netflix" : "",
+        amount: process.env.NODE_ENV === "development" ? 499 : 0,
+        category:
+          process.env.NODE_ENV === "development"
+            ? "entertainment"
+            : "productivity",
+        renewalDate: new Date().toISOString().split("T")[0],
+        isActive: true,
+        hasVariableCharges: false,
+        currency: AppCurrency.INR,
+        userId: user?.id,
+      });
+      setOpen(false);
+    },
+    onError: () => {
+      toast.error("Failed to create subscription");
     },
   });
 
   function onSubmit(data: SubscriptionFormValues) {
-    // In a real app, you would save this to your database
-    console.log(data);
-
-    toast.success(`Added ${data.name} for ₹${data.amount}/month`, {
-      duration: 3000,
-      position: "top-center",
-    });
-
-    form.reset({
-      name: "",
-      amount: 0,
-      category: "entertainment",
-      renewalDate: new Date(),
-      isActive: true,
-      hasVariableCharges: false,
-    });
-    setOpen(false);
+    createSubscription(data);
   }
 
   return (
@@ -170,6 +204,20 @@ export function AddSubscriptionDialog() {
               type="date"
               label="Next Renewal Date"
               name="renewalDate"
+              required
+              Icon={CalendarIcon2}
+            />
+
+            <InputField
+              type="select"
+              label="Renewal Interval"
+              name="renewInterval"
+              options={Object.values(SubscriptionRenewInterval).map(
+                (interval) => ({
+                  label: interval,
+                  value: interval,
+                })
+              )}
               required
               Icon={CalendarIcon2}
             />

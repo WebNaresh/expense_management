@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
             data: {
               email: user.email,
               name: username,
-              whatsappNumber: username, // Using username as temporary whatsapp number
+              whatsappVerified: false,
             },
           });
         }
@@ -55,21 +55,17 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        // Find the user in database
+        // Find the user in database with all fields
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email! },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            whatsappNumber: true,
-          },
         });
 
         if (dbUser) {
-          // Add user information to the token
+          // Add all user information to the token
           token.id = dbUser.id;
-          token.whatsappNumber = dbUser.whatsappNumber;
+          token.whatsappNumber = dbUser.whatsappNumber || "";
+          token.whatsappVerified = dbUser.whatsappVerified;
+          // Add any other fields from the Prisma User model that are needed in the session
         }
       }
       return token;
@@ -81,6 +77,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: token.id as string,
           whatsappNumber: token.whatsappNumber as string,
+          whatsappVerified: token.whatsappVerified as boolean,
         },
       };
     },
@@ -115,6 +112,7 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       whatsappNumber: string;
+      whatsappVerified: boolean;
     }
   }
 }
@@ -124,5 +122,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     whatsappNumber: string;
+    whatsappVerified: boolean;
   }
 }

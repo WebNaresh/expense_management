@@ -1,7 +1,5 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { ArrowUp } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useQueryState } from "nuqs";
 import { ActiveSubscriptions } from "./_components/active-subscriptions";
@@ -9,8 +7,6 @@ import { AddExpenseDialog } from "./_components/add-expense-dialog";
 import { AddLoanDialog } from "./_components/add-loan-dialog";
 import { AddSubscriptionDialog } from "./_components/add-subscription-dialog";
 import { FinancialTrend } from "./_components/financial-trend";
-import { MonthlyExpenses } from "./_components/monthly-expenses";
-import { RecentExpenses } from "./_components/recent-expenses";
 import { RecentTransactions } from "./_components/recent-transactions";
 import DashboardLoader from "./loader";
 
@@ -173,55 +169,12 @@ export default function Dashboard() {
         </h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
           <AddExpenseDialog />
-          <AddSubscriptionDialog />
+          <AddSubscriptionDialog user={session?.user} />
           <AddLoanDialog />
         </div>
       </div>
 
-      <div className="flex flex-row gap-4">
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-emerald-500 p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Your Balance</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold mb-2">
-              ₹{balanceData.balance.toLocaleString()}
-            </p>
-            <div className="flex items-center gap-1 text-sm text-emerald-600">
-              <ArrowUp className="h-4 w-4" />
-              <span>+{balanceData.change}% from last month</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-red-600 p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Money You Owe</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold">
-              ₹{summaryData.totalOwed.toLocaleString()}
-            </p>
-          </div>
-        </Card>
-
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-[#0A2647] p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Money to Collect</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold">
-              ₹{summaryData.totalReceived.toLocaleString()}
-            </p>
-          </div>
-        </Card>
-      </div>
-      <MonthlyExpenses initialExpenses={monthlyExpensesData} />
-      {/* Third row - Recent Expenses and Active Subscriptions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RecentExpenses expenses={expensesData} />
-        <ActiveSubscriptions />
-      </div>
+      <ActiveSubscriptions />
       <div className="grid gap-6">
         <FinancialTrend data={financialTrendData} />
         <RecentTransactions transactions={transactionsData} />
