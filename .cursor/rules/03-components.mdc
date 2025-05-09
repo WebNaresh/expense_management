@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Practice Stack - Components
+
+## UI Components
+- [components/ui/](mdc:components/ui) - shadcn/ui base components (buttons, inputs, etc.)
+- [components/navbar/](mdc:components/navbar) - Navigation and header components
+- [components/AppInputFields/](mdc:components/AppInputFields) - Custom form input fields
+
+## Custom Components
+- [app/_components/](mdc:app/_components) - App-specific components like headers and shared layouts
+
+## UI Design Principles
+- Use a clean, modern UI with proper spacing and visual hierarchy
+- Create visually engaging interfaces with Lucide React icons
+- Consistently use shadcn theme colors through CSS variables (`--primary`, `--foreground`, etc.)
+- Follow a mobile-first approach with responsive designs
+- Implement subtle animations and transitions for a polished feel
+
+## Common Component Usage
+Examples of component usage patterns:
+
+```tsx
+// Button component with variants
+<Button variant="outline">Click Me</Button>
+<Button asChild>
+  <Link href="/signup">Get Started Free</Link>
+</Button>
+
+// Card component with content
+<Card>
+  <CardHeader>
+    <CardTitle>Card Title</CardTitle>
+    <CardDescription>Card description goes here</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>Main content goes here</p>
+  </CardContent>
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
+
+// Custom input field
+<InputField
+  label="Email"
+  placeholder="Enter your email"
+  type="email"
+  required
+/>
+```

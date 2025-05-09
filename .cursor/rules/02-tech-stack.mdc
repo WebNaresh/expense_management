@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Practice Stack - Tech Stack
+
+## Frontend Framework
+- Next.js 14 (App Router)
+- React 18
+
+## UI and Styling
+- Tailwind CSS
+- shadcn/ui component library
+- Lucide React for icons
+- Mobile-first, responsive design
+
+## State Management
+- React useState/useReducer for local state
+- Zustand for global client state (when needed)
+
+## Authentication
+- Custom OTP-based authentication system
+- Email/SMS login without passwords
+
+## Database
+- PostgreSQL
+- Prisma ORM for database access
+
+## Key Features
+- Lead Management: Capture, qualify, and convert leads with custom statuses
+- Proposal Builder: Drag-and-drop sections, upload signatures, export branded PDFs
+- Dynamic Pricing Engine: Configure static and per-user rates, prepayment and recurring billing
+- Real-Time Dashboard: KPI cards, charts, and alerts for proposal statuses and expirations
+
+## Key Libraries
+- Zod for validation
+- Axios for API requests
+- date-fns for date manipulation

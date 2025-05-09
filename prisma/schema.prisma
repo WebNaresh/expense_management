@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  email            String            @unique
+  whatsappNumber   String?           @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  takenLoans       Loan[]            @relation("TakenLoans")
+  givenLoans       Loan[]            @relation("GivenLoans")
+  subscriptions    Subscription[]
+  variableExpenses VariableExpense[]
+  balance          Balance?
+  transactions     Transaction[]
+
+  @@index([email])
+  @@index([whatsappNumber])
+  @@index([name])
+}
+
+model Loan {
+  id          String     @id @default(uuid())
+  from        User       @relation(fields: [fromId], references: [id], name: "TakenLoans")
+  fromId      String
+  to          User       @relation(fields: [toId], references: [id], name: "GivenLoans")
+  toId        String
+  amount      Float      @default(0)
+  description String?
+  status      LoanStatus @default(PENDING)
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status])
+  @@index([fromId])
+  @@index([toId])
+}
+
+enum LoanStatus {
+  PENDING
+  PAID
+  CANCELLED
+  OVERDUE
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  name        String
+  amount      Float    @default(0)
+  description String?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  isActive    Boolean  @default(true)
+  billingDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model VariableExpense {
+  id          String          @id @default(uuid())
+  name        String
+  amount      Float           @default(0)
+  description String?
+  user        User            @relation(fields: [userId], references: [id])
+  userId      String
+  date        DateTime
+  category    ExpenseCategory
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([category])
+}
+
+enum ExpenseCategory {
+  FOOD
+  TRANSPORT
+  ENTERTAINMENT
+  UTILITIES
+  CLOUD_SERVICES
+  SUBSCRIPTIONS
+  SHOPPING
+  HEALTHCARE
+  EDUCATION
+  OTHER
+}
+
+model Balance {
+  id             String   @id @default(uuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String   @unique
+  currentBalance Float    @default(0)
+  totalOwed      Float    @default(0)
+  totalReceived  Float    @default(0)
+  lastUpdated    DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          String              @id @default(uuid())
+  user        User                @relation(fields: [userId], references: [id])
+  userId      String
+  amount      Float               @default(0)
+  type        TransactionType
+  category    TransactionCategory
+  description String?
+  createdAt   DateTime            @default(now())
+  reference   String? // For linking to loans, expenses, or subscriptions
+
+  @@index([userId])
+  @@index([type])
+  @@index([category])
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionCategory {
+  LOAN_PAYMENT
+  LOAN_RECEIVED
+  SUBSCRIPTION_PAYMENT
+  VARIABLE_EXPENSE
+  TRANSFER
+  OTHER
+}

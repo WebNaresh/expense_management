@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Practice Stack - Routing Structure
+
+## Next.js App Router
+
+This project uses Next.js App Router with directory-based routing.
+
+## Public Pages
+- [app/(utility)/](mdc:app/(utility)/) - Utility routes like manifest.ts
+- [app/page.tsx](mdc:app/page.tsx) - Main landing page
+- [app/login/](mdc:app/login/) - Login page
+- [app/signup/](mdc:app/signup/) - Signup page
+
+## Application Routes
+- [app/dashboard/](mdc:app/dashboard/) - User dashboard
+- [app/leads/](mdc:app/leads/) - Lead management
+- [app/proposals/](mdc:app/proposals/) - Proposal management
+- [app/settings/](mdc:app/settings/) - User and account settings
+
+## Route Structure
+
+The app follows a consistent structure for each route:
+```
+app/
+  ├── page.tsx         # Landing page
+  ├── login/
+  │   └── page.tsx     # Login page
+  ├── dashboard/
+  │   ├── page.tsx     # Dashboard page
+  │   ├── loading.tsx  # Loading state
+  │   └── layout.tsx   # Dashboard layout
+  └── ...
+```
+
+## Layout & Providers
+- [app/layout.tsx](mdc:app/layout.tsx) - Root layout with metadata
+- [app/providers.tsx](mdc:app/providers.tsx) - Context providers
+
+## API Routes
+- [app/api/](mdc:app/api/) - API endpoints using Next.js Route Handlers
