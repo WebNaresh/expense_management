@@ -1,6 +1,4 @@
-export const config = {
-    schedule: '* * * * *', // every 1 minute
-};
+
 
 export async function GET() {
     console.log(`⏱️ Cron job triggered at ${new Date().toISOString()}`);
