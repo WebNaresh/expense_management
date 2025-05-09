@@ -1,15 +1,7 @@
 "use client";
 
+import InputField from "@/components/AppInputFields/InputField";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -19,26 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, Plus } from "lucide-react";
+import {
+  Calendar as CalendarIcon2,
+  DollarSign,
+  PenLine,
+  Plus,
+  Tags,
+  ToggleLeft,
+} from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -52,7 +34,7 @@ const categories = [
   { label: "Health", value: "health" },
   { label: "Education", value: "education" },
   { label: "Other", value: "other" },
-] as const;
+];
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -113,10 +95,7 @@ export function AddSubscriptionDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-        >
+        <Button className="hover:bg-primary hover:text-primary-foreground transition-all duration-300 cursor-pointer">
           <Plus className="sm:mr-2 h-4 w-4" />
           <span className="hidden sm:inline">Add Subscription</span>
         </Button>
@@ -133,150 +112,50 @@ export function AddSubscriptionDialog() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 py-2"
           >
-            <FormField
-              control={form.control}
+            <InputField
+              type="text"
+              label="Subscription Name"
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Subscription Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Netflix" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              placeholder="Netflix"
+              required
+              Icon={PenLine}
             />
-            <FormField
-              control={form.control}
+
+            <InputField
+              type="number"
+              label="Monthly Amount (₹)"
               name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Amount (₹)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="499" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              placeholder="499"
+              required
+              Icon={DollarSign}
             />
-            <FormField
-              control={form.control}
+
+            <InputField
+              type="select"
+              label="Category"
               name="category"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Category</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value
-                            ? categories.find(
-                                (category) => category.value === field.value
-                              )?.label
-                            : "Select category"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0">
-                      <Command>
-                        <CommandInput placeholder="Search category..." />
-                        <CommandList>
-                          <CommandEmpty>No category found.</CommandEmpty>
-                          <CommandGroup>
-                            {categories.map((category) => (
-                              <CommandItem
-                                value={category.label}
-                                key={category.value}
-                                onSelect={() => {
-                                  form.setValue("category", category.value);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    category.value === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {category.label}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+              options={categories}
+              required
+              isSearchable
+              Icon={Tags}
             />
-            <FormField
-              control={form.control}
+
+            <InputField
+              type="date"
+              label="Next Renewal Date"
               name="renewalDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Next Renewal Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+              required
+              Icon={CalendarIcon2}
             />
-            <FormField
-              control={form.control}
+
+            <InputField
+              type="switch"
+              label="Active Subscription"
               name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Active Subscription</FormLabel>
-                    <FormDescription>
-                      Is this subscription currently active?
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+              description="Is this subscription currently active?"
+              Icon={ToggleLeft}
             />
+
             <DialogFooter>
               <Button type="submit">Add Subscription</Button>
             </DialogFooter>

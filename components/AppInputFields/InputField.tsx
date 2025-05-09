@@ -68,7 +68,7 @@ export interface InputFieldProps<T extends FieldValues = DefaultFormValues>
   async_function?: (
     input: string
   ) => Promise<{ value: string; label: string }[]>;
-  Icon?: LucideIcon | IconType;
+  Icon: LucideIcon | IconType;
   iconClassName?: string;
   is_sorted?: true | false;
   isSearchable?: boolean;
@@ -181,6 +181,7 @@ const InputField = <T extends FieldValues>({
         required={required}
         type={type}
         description={description}
+        Icon={Icon}
       />
     );
   }
@@ -196,6 +197,7 @@ const InputField = <T extends FieldValues>({
         required={required}
         type={type}
         description={description}
+        Icon={Icon}
       />
     );
   }
@@ -210,6 +212,7 @@ const InputField = <T extends FieldValues>({
         required={required}
         type={type}
         description={description}
+        Icon={Icon}
       />
     );
   }
@@ -341,7 +344,7 @@ const InputField = <T extends FieldValues>({
                   "rounded-md shadow-sm",
                   "placeholder:text-muted-foreground/50",
                   "focus:ring-2 focus:ring-primary/20",
-                  Icon && "pl-10"
+                  "pl-10"
                 )}
                 type={type}
                 placeholder={placeholder}
