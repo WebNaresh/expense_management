@@ -103,8 +103,6 @@ export async function GET(request: NextRequest) {
  * This endpoint receives messages and events from WhatsApp
  */
 export async function POST(request: NextRequest) {
-    const body2 = await request.json();
-    console.info(`🚀 ~ body2:`, body2)
     let body;
     try {
         // Parse the request body only once
