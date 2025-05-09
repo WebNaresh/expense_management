@@ -24,33 +24,6 @@ const summaryData = {
   totalReceived: 7000,
 };
 
-const expensesData = [
-  {
-    id: "1",
-    name: "Groceries",
-    amount: 1500,
-    category: "Food",
-    date: "Today",
-    icon: null,
-  },
-  {
-    id: "2",
-    name: "Uber Ride",
-    amount: 350,
-    category: "Travel",
-    date: "Yesterday",
-    icon: null,
-  },
-  {
-    id: "3",
-    name: "Movie Tickets",
-    amount: 800,
-    category: "Entertainment",
-    date: "May 5, 2023",
-    icon: null,
-  },
-];
-
 const financialTrendData = [
   { date: "Apr 1", balance: 10000 },
   { date: "Apr 5", balance: 11200 },
@@ -101,45 +74,6 @@ const transactionsData = [
     amount: 499,
     category: "Utilities",
     status: "Overdue" as const,
-  },
-];
-
-const monthlyExpensesData = [
-  {
-    id: "1",
-    name: "Room Rent",
-    amount: 8000,
-    dueDate: "5th of every month",
-    isPaid: true,
-    category: "housing",
-    icon: null,
-  },
-  {
-    id: "2",
-    name: "Mess Fees",
-    amount: 3500,
-    dueDate: "3rd of every month",
-    isPaid: false,
-    category: "food",
-    icon: null,
-  },
-  {
-    id: "3",
-    name: "Internet Bill",
-    amount: 999,
-    dueDate: "10th of every month",
-    isPaid: true,
-    category: "utilities",
-    icon: null,
-  },
-  {
-    id: "4",
-    name: "Gym Membership",
-    amount: 1200,
-    dueDate: "15th of every month",
-    isPaid: false,
-    category: "fitness",
-    icon: null,
   },
 ];
 
