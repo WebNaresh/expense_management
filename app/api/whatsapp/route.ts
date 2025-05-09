@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
     try {
         // Parse the request body
         const body = await request.json();
+        console.log(`🚀 ~ body:`, body)
 
         // Validate the webhook payload against our schema
         const result = webhookMessageSchema.safeParse(body);
