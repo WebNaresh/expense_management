@@ -52,7 +52,7 @@ const InputTextArea = (props: Omit<InputFieldProps, "form">) => {
                 )}
 
                 <Textarea
-                  className={cn("dark:focus:ring-white h-11", Icon && "pl-10")}
+                  className={cn("dark:focus:ring-white h-11", "pl-10")}
                   placeholder={placeholder}
                   {...field}
                 />

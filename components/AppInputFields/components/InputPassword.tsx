@@ -84,7 +84,7 @@ const InputPassword: FC<Omit<InputFieldProps, "form">> = (props) => {
                   "rounded-md shadow-sm",
                   "placeholder:text-muted-foreground/50",
                   "focus:ring-2 focus:ring-primary/20",
-                  Icon && "pl-10"
+                  "pl-10"
                 )}
                 placeholder={placeholder}
                 {...field}

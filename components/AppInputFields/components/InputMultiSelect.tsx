@@ -48,7 +48,7 @@ const InputMultiSelect: React.FC<InputFieldProps> = (props) => {
         borderColor: "hsl(var(--primary))",
         cursor: "pointer",
       },
-      paddingLeft: Icon ? "38px" : "12px",
+      paddingLeft: "38px",
     }),
     valueContainer: (provided: any) => ({
       ...provided,
