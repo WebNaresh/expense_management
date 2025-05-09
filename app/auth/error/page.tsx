@@ -18,7 +18,7 @@ export default function AuthError() {
           {error || "An error occurred during authentication"}
         </p>
         <Button asChild className="w-full">
-          <Link href="/auth/signin">Try Again</Link>
+          <Link href="/login">Try Again</Link>
         </Button>
       </div>
     </div>

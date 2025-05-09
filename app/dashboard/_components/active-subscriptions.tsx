@@ -1,11 +1,5 @@
 "use client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Clock } from "lucide-react";
 import { AddSubscriptionDialog } from "./add-subscription-dialog";
@@ -29,9 +23,6 @@ export function ActiveSubscriptions({}: ActiveSubscriptionsProps) {
           </CardTitle>
           <AddSubscriptionDialog />
         </div>
-        <CardDescription className="text-muted-foreground/80">
-          Here are the subscriptions you have active.
-        </CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
         <div className="space-y-4">
