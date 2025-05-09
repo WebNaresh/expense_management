@@ -1,3 +1,4 @@
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -43,6 +44,35 @@ const webhookMessageSchema = z.object({
 });
 
 /**
+ * Sends a message back to the user via WhatsApp API
+ */
+async function sendWhatsAppMessage(phoneNumber: string, message: string) {
+    try {
+        const response = await axios.post(
+            `https://graph.facebook.com/v17.0/${process.env.NEXT_WHATSAPP_PHONE_NUMBER_ID}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: phoneNumber,
+                type: "text",
+                text: { body: message },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_WHATSAPP_API_ACCESS_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        console.log("Message sent successfully:", response.data);
+        return true;
+    } catch (error) {
+        console.error("Error sending WhatsApp message:", error);
+        return false;
+    }
+}
+
+/**
  * Handles incoming messages from WhatsApp
  * This is a placeholder function that you can implement based on your needs
  */
@@ -56,6 +86,12 @@ async function handleIncomingMessage(senderNumber: string, messageContent: strin
         // - Integrate with your SpendIt application logic
 
         console.log(`Received message from ${senderNumber}: ${messageContent}`);
+
+        // Check for specific commands
+        if (messageContent.toLowerCase() === 'subscription') {
+            // Send a response back for subscription command
+            await sendWhatsAppMessage(senderNumber, "I am Naresh Bhosale AI. How can I help you with your subscriptions?");
+        }
 
         // Return true to indicate successful handling
         return true;
@@ -83,7 +119,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Verify the mode and token
-        if (mode === 'subscribe' && token === process.env.NEXT_WHATSAPP_API_ACCESS_TOKEN) {
+        if (mode === 'subscribe' && token === "spendit123") {
             // Respond with the challenge token from the request
             return new NextResponse(challenge, { status: 200 });
         } else {
@@ -124,8 +160,8 @@ export async function POST(request: NextRequest) {
                     const senderNumber = message.from;
                     const messageContent = message.text?.body || '';
 
-                    if (messageContent.toLowerCase() === 'hi') {
-                        console.log(`User ${senderNumber} said: HI`);
+                    if (messageContent.toLowerCase() === 'subscription') {
+                        console.log(`User ${senderNumber} said: Subscription`);
                     }
 
                     // Handle the incoming message
