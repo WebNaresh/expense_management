@@ -1,6 +1,6 @@
 import { openai } from "@/lib/open_ai";
 import { prisma } from "@/lib/prisma";
-import axios from "axios";
+import { WhatsappMessageBuilder } from "@/lib/whatsapp_template_builder";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -46,27 +46,15 @@ const webhookMessageSchema = z.object({
 });
 
 /**
- * Sends a message back to the user via WhatsApp API
+ * Sends a message back to the user via WhatsApp API using the WhatsappMessageBuilder
  */
 async function sendWhatsAppMessage(phoneNumber: string, message: string) {
     try {
-        const response = await axios.post(
-            `https://graph.facebook.com/v17.0/${process.env.NEXT_WHATSAPP_PHONE_NUMBER_ID}/messages`,
-            {
-                messaging_product: "whatsapp",
-                to: phoneNumber,
-                type: "text",
-                text: { body: message },
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.NEXT_WHATSAPP_API_ACCESS_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
+        const messageBuilder = new WhatsappMessageBuilder(phoneNumber)
+            .setText(message);
 
-        console.log("Message sent successfully:", response.data);
+        const response = await messageBuilder.sendMessage();
+        console.log("Message sent successfully:", response);
         return true;
     } catch (error) {
         console.error("Error sending WhatsApp message:", error);
@@ -75,24 +63,46 @@ async function sendWhatsAppMessage(phoneNumber: string, message: string) {
 }
 
 /**
+ * Sends an interactive message with buttons
+ */
+async function sendInteractiveMessage(phoneNumber: string, header: string, body: string, buttons: { id: string, title: string }[]) {
+    try {
+        const messageBuilder = new WhatsappMessageBuilder(phoneNumber)
+            .setInteractiveButtons(header, body, buttons);
+
+        const response = await messageBuilder.sendMessage();
+        console.log("Interactive message sent successfully:", response);
+        return true;
+    } catch (error) {
+        console.error("Error sending interactive WhatsApp message:", error);
+        return false;
+    }
+}
+
+/**
  * Handles incoming messages from WhatsApp
- * This is a placeholder function that you can implement based on your needs
  */
 async function handleIncomingMessage(senderNumber: string, messageContent: string) {
     try {
         // TODO: Implement your message handling logic here
-        // For example:
-        // - Parse expense amounts from messages
-        // - Update user's expense records
-        // - Send confirmation messages
-        // - Integrate with your SpendIt application logic
-
         console.log(`Received message from ${senderNumber}: ${messageContent}`);
 
         // Check for specific commands
         if (messageContent.toLowerCase() === 'subscription') {
-            // Send a response back for subscription command
+            // Send a response back for subscription command using the message builder
             await sendWhatsAppMessage(senderNumber, "I am Naresh Bhosale AI. How can I help you with your subscriptions?");
+        } else if (messageContent.toLowerCase() === 'help') {
+            // Send an interactive message with options
+            await sendInteractiveMessage(
+                senderNumber,
+                "Expense Management Help",
+                "How can I assist you today?",
+                [
+                    { id: "view_subscriptions", title: "View Subscriptions" },
+                    { id: "add_expense", title: "Add Expense" },
+                    { id: "payment_reminder", title: "Payment Reminders" }
+                ]
+            );
         }
 
         // Return true to indicate successful handling
@@ -102,7 +112,6 @@ async function handleIncomingMessage(senderNumber: string, messageContent: strin
         return false;
     }
 }
-
 
 export async function GET(request: NextRequest) {
     try {
@@ -161,6 +170,7 @@ export async function POST(request: NextRequest) {
                 for (const message of value.messages || []) {
                     const senderNumber = message.from;
                     const messageContent = message.text?.body || '';
+
                     const subscriptions = await prisma.subscription.findMany({
                         where: {
                             user: {
@@ -172,10 +182,10 @@ export async function POST(request: NextRequest) {
                             amount: true,
                             renewalDate: true,
                         }
-                    })
+                    });
 
                     if (messageContent.toLowerCase() === 'subscription') {
-                        console.log(`User ${senderNumber} said: Subscription`);
+                        console.log(`User ${senderNumber} said: Subscription ${JSON.stringify(subscriptions)} message: ${messageContent}`);
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
