@@ -65,16 +65,17 @@ async function handleIncomingMessage(senderNumber: string, messageContent: strin
     }
 }
 
-/**
- * GET endpoint for webhook verification
- * This endpoint verifies the webhook URL when you set it up in the WhatsApp Business API
- */
+
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
+        console.log(`🚀 ~ searchParams:`, searchParams)
         const mode = searchParams.get('hub.mode');
+        console.log(`🚀 ~ mode:`, mode)
         const token = searchParams.get('hub.verify_token');
+        console.log(`🚀 ~ token:`, token)
         const challenge = searchParams.get('hub.challenge');
+        console.log(`🚀 ~ challenge:`, challenge)
 
         // Verify that all required parameters are present
         if (!mode || !token || !challenge) {
