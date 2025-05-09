@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Menu, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
@@ -17,10 +17,25 @@ const navLinks = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="absolute inset-0 border-b border-white/10 bg-white/5 backdrop-blur-md" />
+      <div
+        className={cn(
+          "absolute inset-0 border-b border-white/10 backdrop-blur-md transition-colors duration-200",
+          isScrolled ? "bg-white/5" : "bg-[#1ab57e]"
+        )}
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-white/15 to-white/5 pointer-events-none" />
       <div className="container relative flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
@@ -38,7 +53,14 @@ export function Navbar() {
                 className="relative"
               />
             </div>
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500">
+            <span
+              className={cn(
+                "text-xl font-bold transition-colors duration-200",
+                isScrolled
+                  ? "bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500"
+                  : "text-white"
+              )}
+            >
               SpendIt
             </span>
           </Link>
@@ -49,7 +71,9 @@ export function Navbar() {
                 href={item.href}
                 className={cn(
                   "relative text-sm font-medium transition-colors group",
-                  "text-muted-foreground hover:text-primary"
+                  isScrolled
+                    ? "text-muted-foreground hover:text-primary"
+                    : "text-white/90 hover:text-white"
                 )}
               >
                 {item.label}
@@ -60,8 +84,22 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
-            <div className="relative px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
-              <p className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500">
+            <div
+              className={cn(
+                "relative px-4 py-2 rounded-full backdrop-blur-sm border transition-colors duration-200",
+                isScrolled
+                  ? "bg-white/5 border-white/10"
+                  : "bg-white/10 border-white/20"
+              )}
+            >
+              <p
+                className={cn(
+                  "text-sm font-medium transition-colors duration-200",
+                  isScrolled
+                    ? "bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500"
+                    : "text-white"
+                )}
+              >
                 Welcome back, Naresh!
               </p>
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 opacity-0 hover:opacity-100 transition-opacity" />
@@ -69,7 +107,12 @@ export function Navbar() {
 
             <Button variant="ghost" size="icon" className="relative group">
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
-              <User className="h-5 w-5 relative text-emerald-600" />
+              <User
+                className={cn(
+                  "h-5 w-5 relative transition-colors duration-200",
+                  isScrolled ? "text-emerald-600" : "text-white"
+                )}
+              />
             </Button>
           </div>
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -77,10 +120,18 @@ export function Navbar() {
               <Button
                 variant="outline"
                 size="icon"
-                className="relative md:hidden group border-white/10 bg-white/5"
+                className={cn(
+                  "relative md:hidden group border-white/10 transition-colors duration-200",
+                  isScrolled ? "bg-white/5" : "bg-white/10"
+                )}
               >
                 <div className="absolute inset-0 rounded-md bg-gradient-to-r from-emerald-500/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
-                <Menu className="h-5 w-5 relative" />
+                <Menu
+                  className={cn(
+                    "h-5 w-5 relative transition-colors duration-200",
+                    isScrolled ? "text-muted-foreground" : "text-white"
+                  )}
+                />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
