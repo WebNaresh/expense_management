@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       if (!user.email) return false;
 
       try {
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user }) {
       if (user) {
         // Find the user in database
         const dbUser = await prisma.user.findUnique({
