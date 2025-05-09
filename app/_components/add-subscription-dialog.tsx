@@ -112,8 +112,11 @@ export function AddSubscriptionDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+        >
           <Plus className="sm:mr-2 h-4 w-4" />
           <span className="hidden sm:inline">Add Subscription</span>
         </Button>
