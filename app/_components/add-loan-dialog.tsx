@@ -89,8 +89,9 @@ export function AddLoanDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Add Loan
+        <Button className="bg-orange-500 hover:bg-orange-600 text-white gap-2 rounded-md">
+          <Plus className="h-4 w-4" />
+          Add Loan
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

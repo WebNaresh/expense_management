@@ -98,8 +98,9 @@ export function AddExpenseDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="mr-2 h-4 w-4" /> Add Expense
+        <Button className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 rounded-md">
+          <Plus className="h-4 w-4" />
+          Add Expense
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

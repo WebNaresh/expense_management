@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Command,
   CommandEmpty,
@@ -37,20 +36,20 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { z } from "zod";
+import * as z from "zod";
 
 const categories = [
-  { label: "Entertainment", value: "entertainment" },
-  { label: "Productivity", value: "productivity" },
+  { label: "Housing", value: "housing" },
+  { label: "Food", value: "food" },
   { label: "Utilities", value: "utilities" },
-  { label: "Shopping", value: "shopping" },
-  { label: "Health", value: "health" },
+  { label: "Transportation", value: "transportation" },
   { label: "Education", value: "education" },
+  { label: "Healthcare", value: "healthcare" },
+  { label: "Fitness", value: "fitness" },
   { label: "Other", value: "other" },
 ] as const;
 
@@ -63,68 +62,92 @@ const formSchema = z.object({
   amount: z.coerce.number().positive({
     message: "Amount must be a positive number.",
   }),
-  category: z.enum(
-    [
-      "entertainment",
-      "productivity",
-      "utilities",
-      "shopping",
-      "health",
-      "education",
-      "other",
-    ] as const,
-    {
-      required_error: "Please select a category.",
-    }
-  ),
-  renewalDate: z.date({
-    required_error: "Please select a renewal date.",
-  }),
-  isActive: z.boolean(),
+  category: z.enum([
+    "housing",
+    "food",
+    "utilities",
+    "transportation",
+    "education",
+    "healthcare",
+    "fitness",
+    "other",
+  ]),
+  dueDate: z.coerce.number().min(1).max(31),
+  isPaid: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddSubscriptionDialog() {
+interface Props {
+  onSubmit?: (values: FormValues) => void;
+}
+
+export function AddMonthlyExpenseDialog({
+  onSubmit: externalSubmit,
+}: Props = {}) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      amount: undefined,
-      category: "entertainment",
-      renewalDate: new Date(),
-      isActive: true,
+      amount: 0,
+      category: "housing",
+      dueDate: 1,
+      isPaid: false,
     },
   });
 
-  function onSubmit(data: FormValues) {
-    // In a real app, you would save this to your database
-    console.log(data);
+  function onSubmit(values: FormValues) {
+    console.log(values);
 
-    toast.success(`Added ${data.name} for ₹${data.amount}/month`, {
-      duration: 3000,
-      position: "top-center",
-    });
+    toast.success(
+      `Added ${values.name} for ₹${values.amount} due on the ${
+        values.dueDate
+      }${getDaySuffix(values.dueDate)} of every month`,
+      {
+        duration: 3000,
+        position: "top-center",
+      }
+    );
+
+    if (externalSubmit) {
+      externalSubmit(values);
+    }
 
     form.reset();
     setOpen(false);
   }
 
+  // Helper function to get the day suffix (st, nd, rd, th)
+  function getDaySuffix(day: number) {
+    if (day >= 11 && day <= 13) return "th";
+
+    switch (day % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#0A2647] hover:bg-[#0A2647]/90 text-white gap-2 rounded-md">
-          <Plus className="h-4 w-4" />
-          Add Subscription
+        <Button size="sm" variant="outline" className="h-8 gap-1">
+          <Plus className="h-3.5 w-3.5" />
+          <span>Add</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Subscription</DialogTitle>
+          <DialogTitle>Add Monthly Expense</DialogTitle>
           <DialogDescription>
-            Enter the details of your subscription below.
+            Add a new recurring monthly expense that you pay regularly.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -137,9 +160,9 @@ export function AddSubscriptionDialog() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Subscription Name</FormLabel>
+                  <FormLabel>Expense Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Netflix" {...field} />
+                    <Input placeholder="Room Rent" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -152,7 +175,7 @@ export function AddSubscriptionDialog() {
                 <FormItem>
                   <FormLabel>Monthly Amount (₹)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="499" {...field} />
+                    <Input type="number" placeholder="5000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -220,51 +243,35 @@ export function AddSubscriptionDialog() {
             />
             <FormField
               control={form.control}
-              name="renewalDate"
+              name="dueDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Next Renewal Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <FormItem>
+                  <FormLabel>Due Date (Day of Month)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder="5"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the day of the month when this expense is due (1-31)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <FormField
               control={form.control}
-              name="isActive"
+              name="isPaid"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Active Subscription</FormLabel>
+                    <FormLabel>Already Paid</FormLabel>
                     <FormDescription>
-                      Is this subscription currently active?
+                      Has this expense been paid for the current month?
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -277,7 +284,7 @@ export function AddSubscriptionDialog() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add Subscription</Button>
+              <Button type="submit">Add Monthly Expense</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -1,18 +1,23 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { ArrowUp } from "lucide-react";
+import { ActiveSubscriptions } from "./_components/active-subscriptions";
 import { AddExpenseDialog } from "./_components/add-expense-dialog";
 import { AddLoanDialog } from "./_components/add-loan-dialog";
 import { AddSubscriptionDialog } from "./_components/add-subscription-dialog";
-import { BalanceCard } from "./_components/balance-card";
+import { FinancialTrend } from "./_components/financial-trend";
+import { MonthlyExpenses } from "./_components/monthly-expenses";
+import { RecentExpenses } from "./_components/recent-expenses";
+import { RecentTransactions } from "./_components/recent-transactions";
 // Sample data
 const balanceData = {
   balance: 12000,
   change: 5.2,
-}
+};
 
 const summaryData = {
   totalOwed: 5000,
   totalReceived: 7000,
-}
+};
 
 const expensesData = [
   {
@@ -39,7 +44,7 @@ const expensesData = [
     date: "May 5, 2023",
     icon: null,
   },
-]
+];
 
 const subscriptionsData = [
   {
@@ -66,7 +71,7 @@ const subscriptionsData = [
     isActive: true,
     isRenewalSoon: false,
   },
-]
+];
 
 const financialTrendData = [
   { date: "Apr 1", balance: 10000 },
@@ -76,7 +81,7 @@ const financialTrendData = [
   { date: "Apr 20", balance: 11000 },
   { date: "Apr 25", balance: 12500 },
   { date: "Apr 30", balance: 12000 },
-]
+];
 
 const transactionsData = [
   {
@@ -119,7 +124,7 @@ const transactionsData = [
     category: "Utilities",
     status: "Overdue" as const,
   },
-]
+];
 
 const monthlyExpensesData = [
   {
@@ -158,11 +163,11 @@ const monthlyExpensesData = [
     category: "fitness",
     icon: null,
   },
-]
+];
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Dashboard
@@ -173,27 +178,55 @@ export default function Home() {
           <AddLoanDialog />
         </div>
       </div>
-      <div className="grid gap-6">
-            {/* Financial Cards - Stack on mobile, 3 columns on md and up */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-fit">
-              <BalanceCard {...balanceData} />
-              <Card className="overflow-hidden max-w-sm">
-                <CardHeader className="bg-destructive p-4">
-                  <CardTitle className="text-destructive-foreground text-lg">Money You Owe</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                  <p className="text-3xl sm:text-4xl font-bold">₹{summaryData.totalOwed.toLocaleString()}</p>
-                </CardContent>
-              </Card>
-              <Card className="overflow-hidden max-w-sm">
-                <CardHeader className="bg-secondary p-4">
-                  <CardTitle className="text-secondary-foreground text-lg">Money to Collect</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                  <p className="text-3xl sm:text-4xl font-bold">₹{summaryData.totalReceived.toLocaleString()}</p>
-                </CardContent>
-              </Card>
+
+      <div className="flex flex-row gap-4">
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-emerald-500 p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Your Balance</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold mb-2">
+              ₹{balanceData.balance.toLocaleString()}
+            </p>
+            <div className="flex items-center gap-1 text-sm text-emerald-600">
+              <ArrowUp className="h-4 w-4" />
+              <span>+{balanceData.change}% from last month</span>
             </div>
+          </div>
+        </Card>
+
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-red-600 p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Money You Owe</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold">
+              ₹{summaryData.totalOwed.toLocaleString()}
+            </p>
+          </div>
+        </Card>
+
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-[#0A2647] p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Money to Collect</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold">
+              ₹{summaryData.totalReceived.toLocaleString()}
+            </p>
+          </div>
+        </Card>
+      </div>
+      <MonthlyExpenses initialExpenses={monthlyExpensesData} />
+      {/* Third row - Recent Expenses and Active Subscriptions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <RecentExpenses expenses={expensesData} />
+        <ActiveSubscriptions subscriptions={subscriptionsData} />
+      </div>
+      <div className="grid gap-6">
+        <FinancialTrend data={financialTrendData} />
+        <RecentTransactions transactions={transactionsData} />
+      </div>
     </div>
   );
 }
