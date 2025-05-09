@@ -67,7 +67,7 @@ export function FinancialTrend({ data }: FinancialTrendProps) {
             >
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 opacity={0.1}
               />
               <XAxis
@@ -75,7 +75,7 @@ export function FinancialTrend({ data }: FinancialTrendProps) {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
                 tickFormatter={(value) => {
                   // On small screens, show shorter date format
                   if (window.innerWidth < 640) {
@@ -89,31 +89,31 @@ export function FinancialTrend({ data }: FinancialTrendProps) {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
                 width={65}
               />
               <Tooltip
                 content={<CustomTooltip />}
                 cursor={{
-                  stroke: "hsl(var(--muted-foreground))",
+                  stroke: "var(--muted-foreground)",
                   strokeWidth: 1,
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="balance"
-                stroke="green"
+                stroke="var(--primary)"
                 strokeWidth={2.5}
                 dot={{
                   r: 4,
-                  fill: "green",
+                  fill: "var(--primary)",
                   strokeWidth: 2,
-                  stroke: "#77b577",
+                  stroke: "var(--primary)",
                 }}
                 activeDot={{
                   r: 6,
-                  fill: "green",
-                  stroke: "#77b577",
+                  fill: "var(--primary)",
+                  stroke: "var(--primary)",
                   strokeWidth: 2,
                 }}
               />

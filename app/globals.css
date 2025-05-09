@@ -121,15 +121,6 @@
   }
 }
 
-*::-webkit-scrollbar-thumb {
-  border-radius: 2em;
-  background: hsl(var(--primary) / 0.8);
-}
-*::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-  background: transparent;
-}
 /* For Chrome, Safari, Edge, and Opera */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -202,7 +193,7 @@ input[type="number"]::-ms-clear {
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: rgb(var(--primary) / 0.3);
+  background-color: var(--primary) / 0.3;
   z-index: 30;
 }
 .table-scroll-container {

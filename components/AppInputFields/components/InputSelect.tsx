@@ -37,19 +37,17 @@ const InputSelect: React.FC<Omit<InputFieldProps, "form">> = (props) => {
       ...provided,
       minHeight: "44px",
       border: state.isFocused
-        ? "2px solid hsl(var(--primary))"
-        : "2px solid hsl(var(--input))",
+        ? "2px solid var(--primary)"
+        : "2px solid var(--input)",
       borderRadius: "var(--radius)",
-      backgroundColor: disabled ? "hsl(var(--muted))" : "transparent",
-      boxShadow: state.isFocused
-        ? "0 0 0 2px hsl(var(--primary) / 0.2)"
-        : "none",
+      backgroundColor: disabled ? "var(--muted)" : "transparent",
+      boxShadow: state.isFocused ? "0 0 0 2px var(--primary)/0.2" : "none",
       transition: "all 200ms ease",
       "&:hover": {
-        borderColor: "hsl(var(--primary))",
+        borderColor: "var(--primary)",
         cursor: "pointer",
       },
-      paddingLeft: Icon ? "38px" : "12px",
+      paddingLeft: "38px",
     }),
     valueContainer: (provided: any) => ({
       ...provided,
@@ -58,17 +56,17 @@ const InputSelect: React.FC<Omit<InputFieldProps, "form">> = (props) => {
     }),
     input: (provided: any) => ({
       ...provided,
-      color: "hsl(var(--foreground))",
+      color: "var(--foreground)",
     }),
     singleValue: (provided: any) => ({
       ...provided,
-      color: "hsl(var(--foreground))",
+      color: "var(--foreground)",
       transition: "color 200ms ease",
     }),
     menu: (provided: any) => ({
       ...provided,
-      backgroundColor: "hsl(var(--background))",
-      border: "1px solid hsl(var(--border))",
+      backgroundColor: "var(--background)",
+      border: "1px solid var(--border)",
       borderRadius: "var(--radius)",
       animation: "scaleIn 200ms ease",
       boxShadow:
@@ -79,19 +77,17 @@ const InputSelect: React.FC<Omit<InputFieldProps, "form">> = (props) => {
     option: (provided: any, state: any) => ({
       ...provided,
       backgroundColor: state.isSelected
-        ? "hsl(var(--primary))"
+        ? "var(--primary)"
         : state.isFocused
-        ? "hsl(var(--accent))"
+        ? "var(--accent)"
         : "transparent",
       color: state.isSelected
-        ? "hsl(var(--primary-foreground))"
-        : "hsl(var(--foreground))",
+        ? "var(--primary-foreground)"
+        : "var(--foreground)",
       cursor: "pointer",
       transition: "all 150ms ease",
       "&:hover": {
-        backgroundColor: state.isSelected
-          ? "hsl(var(--primary))"
-          : "hsl(var(--accent))",
+        backgroundColor: state.isSelected ? "var(--primary)" : "var(--accent)",
         transform: "translateX(4px)",
       },
       zIndex: 9999,
@@ -100,11 +96,9 @@ const InputSelect: React.FC<Omit<InputFieldProps, "form">> = (props) => {
       ...provided,
       transition: "transform 200ms ease",
       transform: state.selectProps.menuIsOpen ? "rotate(180deg)" : null,
-      color: state.isFocused
-        ? "hsl(var(--primary))"
-        : "hsl(var(--muted-foreground))",
+      color: state.isFocused ? "var(--primary)" : "var(--muted-foreground)",
       "&:hover": {
-        color: "hsl(var(--primary))",
+        color: "var(--primary)",
       },
     }),
   };

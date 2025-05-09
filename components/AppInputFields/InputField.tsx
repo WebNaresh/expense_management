@@ -293,6 +293,7 @@ const InputField = <T extends FieldValues>({
         className={className}
         disabled={disabled}
         required={required}
+        Icon={Icon}
       />
     );
   }

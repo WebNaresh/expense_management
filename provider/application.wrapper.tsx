@@ -1,19 +1,26 @@
 "use client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import React from "react";
 
 type Props = {
   children: React.ReactNode;
 };
 
-const ApplicationClientWrapper: React.FC<Props> = (props) => {
-  const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const ApplicationClientWrapper = ({ children }: Props) => {
   return (
-    <React.Fragment>
-      <QueryClientProvider client={queryClient}>
-        {props.children}
-      </QueryClientProvider>
-    </React.Fragment>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </SessionProvider>
   );
 };
 

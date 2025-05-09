@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AppCurrency } from "@prisma/client";
 import {
+  AlertCircle,
   Calendar as CalendarIcon2,
+  Currency,
   DollarSign,
   PenLine,
   Plus,
@@ -61,25 +64,29 @@ const formSchema = z.object({
     required_error: "Please select a renewal date.",
   }),
   isActive: z.boolean(),
+  hasVariableCharges: z.boolean(),
+  currency: z.nativeEnum(AppCurrency),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+export type SubscriptionFormValues = z.infer<typeof formSchema>;
 
 export function AddSubscriptionDialog() {
   const [open, setOpen] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm<SubscriptionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      amount: undefined,
+      amount: 0,
       category: "entertainment",
       renewalDate: new Date(),
       isActive: true,
+      hasVariableCharges: false,
+      currency: AppCurrency.INR,
     },
   });
 
-  function onSubmit(data: FormValues) {
+  function onSubmit(data: SubscriptionFormValues) {
     // In a real app, you would save this to your database
     console.log(data);
 
@@ -88,7 +95,14 @@ export function AddSubscriptionDialog() {
       position: "top-center",
     });
 
-    form.reset();
+    form.reset({
+      name: "",
+      amount: 0,
+      category: "entertainment",
+      renewalDate: new Date(),
+      isActive: true,
+      hasVariableCharges: false,
+    });
     setOpen(false);
   }
 
@@ -100,8 +114,8 @@ export function AddSubscriptionDialog() {
           <span className="hidden sm:inline">Add Subscription</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-0 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="p-4 ">
           <DialogTitle>Add New Subscription</DialogTitle>
           <DialogDescription>
             Enter the details of your subscription below.
@@ -110,7 +124,7 @@ export function AddSubscriptionDialog() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 py-2"
+            className="space-y-4 py-2 px-4"
           >
             <InputField
               type="text"
@@ -122,8 +136,20 @@ export function AddSubscriptionDialog() {
             />
 
             <InputField
+              type="select"
+              label="Currency"
+              name="currency"
+              options={Object.values(AppCurrency).map((currency) => ({
+                label: currency,
+                value: currency,
+              }))}
+              required
+              Icon={Currency}
+            />
+
+            <InputField
               type="number"
-              label="Monthly Amount (₹)"
+              label="Monthly Units"
               name="amount"
               placeholder="499"
               required
@@ -156,7 +182,15 @@ export function AddSubscriptionDialog() {
               Icon={ToggleLeft}
             />
 
-            <DialogFooter>
+            <InputField
+              type="switch"
+              label="Variable Charges"
+              name="hasVariableCharges"
+              description="May have additional/extra charges beyond the base amount"
+              Icon={AlertCircle}
+            />
+
+            <DialogFooter className="sticky bottom-0 bg-background">
               <Button type="submit">Add Subscription</Button>
             </DialogFooter>
           </form>

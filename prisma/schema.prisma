@@ -42,13 +42,22 @@ model LoanModel {
 }
 
 model Subscription {
-  id          String   @id @default(uuid())
-  name        String
-  amount      Int
-  renewalDate DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isActive    Boolean  @default(true)
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
+  id                 String      @id @default(uuid())
+  name               String
+  amount             Int
+  renewalDate        DateTime
+  currency           AppCurrency
+  hasVariableCharges Boolean     @default(false)
+  isActive           Boolean     @default(true)
+  userId             String
+  user               User        @relation(fields: [userId], references: [id])
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+enum AppCurrency {
+  INR
+  USD
+  EUR
+  GBP
 }

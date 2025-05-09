@@ -75,6 +75,18 @@ alwaysApply: true
 - Always provide user-friendly error messages
 - Log errors appropriately
 
+## Client-Side Providers and Wrappers
+- Always use `provider/application.wrapper.tsx` for all client-side providers and wrappers
+- Never create separate provider files - consolidate all providers in the application wrapper
+- The application wrapper should handle:
+  - React Query Provider
+  - NextAuth SessionProvider
+  - Any global state providers (Zustand)
+  - Any theme providers
+  - Any other client-side context providers
+- Follow the existing pattern in application.wrapper.tsx for adding new providers
+- Maintain proper TypeScript types for the wrapper props
+
 # 07-editing-policy
 
 **Rule:**
