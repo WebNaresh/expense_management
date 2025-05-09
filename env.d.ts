@@ -7,5 +7,8 @@ declare namespace NodeJS {
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: string;
     NEXT_PUBLIC_GOOGLE_CLIENT_SECRET: string;
     NODE_ENV: "development" | "production";
+    NEXT_OPEN_AI_API_KEY: string;
+    NEXT_AUTH_URL: string;
+    NEXT_PUBLIC_SECRET: string;
   }
 }
