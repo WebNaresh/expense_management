@@ -5,9 +5,7 @@ import { Check, Clock } from "lucide-react";
 import { AddSubscriptionDialog } from "./add-subscription-dialog";
 import { getSubscriptions } from "./home.action";
 
-interface ActiveSubscriptionsProps {}
-
-export function ActiveSubscriptions({}: ActiveSubscriptionsProps) {
+export function ActiveSubscriptions() {
   const { data: subscriptions } = useQuery({
     queryKey: ["subscriptions"],
     queryFn: getSubscriptions,

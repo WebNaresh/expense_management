@@ -9,6 +9,9 @@ alwaysApply: true
 - Use TypeScript for all new code
 - Define interfaces and types in [types/](mdc:types) directory
 - Use explicit typing when type inference is not clear
+- Always use declared variables or remove them if unused
+- Remove unused function parameters to avoid TypeScript/ESLint warnings
+- Prefer destructuring of parameters and objects when appropriate
 
 ## Component Structure
 - Create functional components using TypeScript
@@ -29,6 +32,9 @@ alwaysApply: true
   - Use `&quot;` for quotation marks (")
   - Use `&amp;` for ampersands (&)
   - Use `&lt;` and `&gt;` for angle brackets (< >)
+- Never use direct unescaped special characters in JSX text - even in props like `answer`, `description`, or other string content
+- Run linting checks before committing to catch unescaped entity errors
+- When fixing ESLint errors, ensure all similar instances are fixed, not just the reported ones
 - Use self-closing tags for elements without children (`<Component />`)
 - Use fragment shorthand (`<>...</>`) instead of `<React.Fragment>`
 - Add proper `key` props to elements in arrays using unique, stable identifiers

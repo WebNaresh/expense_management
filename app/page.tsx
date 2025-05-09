@@ -2,7 +2,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import {
@@ -183,7 +182,7 @@ export default function HomePage() {
                   className="bg-white text-black"
                   onClick={handleGetStarted}
                 >
-                  Get Started — It's Free
+                  Get Started — It&apos;s Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
                 <Button size="lg" variant="ghost">
@@ -603,8 +602,8 @@ export default function HomePage() {
                         Manage Personal Loans with Ease
                       </h3>
                       <p className="text-gray-600">
-                        Keep track of money you've borrowed or lent to friends
-                        and family. Set payment schedules and get reminders.
+                        Keep track of money you&apos;ve borrowed or lent to
+                        friends and family with payment schedules.
                       </p>
 
                       <div className="space-y-4 mt-8">
@@ -707,8 +706,8 @@ export default function HomePage() {
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Simply tap the "Add Expense" button and enter the amount,
-                    category, and date.
+                    Simply tap the &quot;Add Expense&quot; button and enter the
+                    amount, category, and date.
                   </p>
                 </div>
               </motion.div>
@@ -944,7 +943,7 @@ export default function HomePage() {
             className="bg-white text-emerald-600 hover:bg-emerald-50 font-medium group shadow-lg transform hover:translate-y-[-2px] transition-all"
             onClick={handleGetStarted}
           >
-            Get Started — It's Free
+            Get Started — It&apos;s Free
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Button>
           <p className="mt-4 text-sm text-emerald-100">
@@ -1131,80 +1130,6 @@ function FaqItem({ question, answer }) {
           <p className="text-gray-600">{answer}</p>
         </div>
       )}
-    </motion.div>
-  );
-}
-
-function TestimonialCard({ quote, name, title, rating }) {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={inView ? "visible" : "hidden"}
-      variants={fadeIn}
-    >
-      <Card className="hover:shadow-lg transition-all duration-300 hover:border-emerald-200 h-full">
-        <CardContent className="p-6 flex flex-col h-full">
-          <div className="mb-4 text-emerald-500">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-8 h-8"
-            >
-              <path
-                d="M9.59 4.59A2 2 0 1 1 11 8H8.41a1 1 0 0 0-.7.29l-3.3 3.3a1 1 0 0 0 0 1.41l3.3 3.3a1 1 0 0 0 .7.3H11a2 2 0 1 1-1.41 3.41"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M19.59 4.59A2 2 0 1 1 21 8h-2.59a1 1 0 0 0-.7.29l-3.3 3.3a1 1 0 0 0 0 1.41l3.3 3.3a1 1 0 0 0 .7.3H21a2 2 0 1 1-1.41 3.41"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-
-          <div className="flex mb-3">
-            {[...Array(5)].map((_, i) => (
-              <svg
-                key={i}
-                className={`w-5 h-5 ${
-                  i < rating ? "text-yellow-400" : "text-gray-300"
-                }`}
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-              </svg>
-            ))}
-          </div>
-
-          <p className="text-gray-700 mb-6 italic flex-grow">{quote}</p>
-
-          <div className="flex items-center mt-auto">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
-              {name.charAt(0)}
-            </div>
-            <div className="ml-3">
-              <h4 className="font-bold">{name}</h4>
-              <p className="text-sm text-gray-500">{title}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </motion.div>
   );
 }

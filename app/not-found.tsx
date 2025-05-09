@@ -78,8 +78,8 @@ export default function NotFound() {
                 variants={itemVariants}
                 className="text-lg text-gray-600 max-w-md mx-auto md:mx-0"
               >
-                Oops! It seems like the financial page you're looking for has
-                gone missing from our ledger.
+                Oops! It seems like the financial page you&apos;re looking for
+                has gone missing from our ledger.
               </motion.p>
 
               <motion.div
