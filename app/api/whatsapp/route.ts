@@ -182,10 +182,11 @@ export async function POST(request: NextRequest) {
                                 { role: "user", content: `Act as whatsapp bot and reply to the user ${JSON.stringify(subscriptions)}` }
                             ]
                         });
+                        await sendWhatsAppMessage(senderNumber, response.choices[0].message.content || 'No subscriptions found');
+                    } else {
+                        // Handle the incoming message
+                        await handleIncomingMessage(senderNumber, messageContent);
                     }
-
-                    // Handle the incoming message
-                    await handleIncomingMessage(senderNumber, messageContent);
                 }
             }
         }
