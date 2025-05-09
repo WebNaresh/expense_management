@@ -166,26 +166,70 @@ export async function POST(request: NextRequest) {
                                 name: true,
                                 amount: true,
                                 renewalDate: true,
+                                currency: true,
+                                user: {
+                                    select: {
+                                        name: true,
+                                        email: true,
+                                        whatsappNumber: true,
+                                    }
+                                }
                             }
                         });
 
                         if (messageContent.toLowerCase() === 'subscription') {
                             console.log(`User ${senderNumber} requested subscriptions: ${JSON.stringify(subscriptions)}`);
 
+                            // Get user's name from the first subscription (if available)
+                            let userName = "there";
+                            if (subscriptions.length > 0 && subscriptions[0].user && subscriptions[0].user.name) {
+                                userName = subscriptions[0].user.name;
+                            }
+
                             // Create a user-friendly subscription summary
                             let subscriptionSummary;
                             if (subscriptions.length === 0) {
-                                subscriptionSummary = "You don't have any active subscriptions yet.";
+                                subscriptionSummary = `Hi ${userName}! You don't have any active subscriptions yet.`;
                             } else {
-                                const totalAmount = subscriptions.reduce((sum, sub) => sum + sub.amount, 0);
-                                const formattedList = subscriptions.map(
-                                    sub => `- ${sub.name}: ₹${sub.amount} (renews on ${new Date(sub.renewalDate).toLocaleDateString()})`
-                                ).join('\n');
+                                // Get all unique currencies and group subscriptions by currency
+                                const subscriptionsByCurrency: Record<string, any[]> = {};
 
-                                subscriptionSummary = `Here are your active subscriptions:\n\n${formattedList}\n\nTotal monthly spending: ₹${totalAmount}`;
+                                subscriptions.forEach(sub => {
+                                    const currency = sub.currency || 'INR'; // Default to INR if not specified
+                                    if (!subscriptionsByCurrency[currency]) {
+                                        subscriptionsByCurrency[currency] = [];
+                                    }
+                                    subscriptionsByCurrency[currency].push(sub);
+                                });
+
+                                // Format currency symbols based on currency code
+                                const currencySymbols: Record<string, string> = {
+                                    'INR': '₹',
+                                    'USD': '$',
+                                    'EUR': '€',
+                                    'GBP': '£'
+                                };
+
+                                // Generate formatted list with appropriate currency symbols
+                                let formattedLists: string[] = [];
+                                let totalAmounts: string[] = [];
+
+                                Object.entries(subscriptionsByCurrency).forEach(([currency, subs]) => {
+                                    const symbol = currencySymbols[currency] || currency;
+                                    const totalAmount = subs.reduce((sum, sub) => sum + sub.amount, 0);
+
+                                    const formattedList = subs.map(
+                                        sub => `- ${sub.name}: ${symbol}${sub.amount} (renews on ${new Date(sub.renewalDate).toLocaleDateString()})`
+                                    ).join('\n');
+
+                                    formattedLists.push(formattedList);
+                                    totalAmounts.push(`Total ${currency} spending: ${symbol}${totalAmount}`);
+                                });
+
+                                subscriptionSummary = `Hi ${userName}! Here are your active subscriptions:\n\n${formattedLists.join('\n\n')}\n\n${totalAmounts.join('\n')}`;
                             }
 
-                            // Improved OpenAI prompt with more guidance
+                            // Improved OpenAI prompt with currency awareness
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
@@ -194,17 +238,19 @@ export async function POST(request: NextRequest) {
                                         content: `You are a helpful WhatsApp bot for an expense management app. 
                                         When responding about subscriptions:
                                         1. Be concise and friendly
-                                        2. Focus on providing information about the subscriptions
-                                        3. If there are subscriptions, mention when they're due and the total amount
-                                        4. If there are no subscriptions, suggest how to add one
-                                        5. Avoid phrases like "I'm an AI" or "As an AI"
-                                        6. Don't ask questions about what the user wants - just provide the subscription info
-                                        7. Sign off as "Expense Manager Bot"`
+                                        2. Address the user by their name
+                                        3. Focus on providing information about the subscriptions
+                                        4. Maintain the correct currency symbols for each subscription (₹ for INR, $ for USD, etc.)
+                                        5. If there are multiple currencies, mention the total for each currency separately
+                                        6. If there are no subscriptions, suggest how to add one
+                                        7. Avoid phrases like "I'm an AI" or "As an AI"
+                                        8. Don't ask questions about what the user wants - just provide the subscription info
+                                        9. Sign off as "Expense Manager Bot"`
                                     },
                                     {
                                         role: "user",
-                                        content: `A user has asked about their subscriptions. Here is their subscription data: ${subscriptionSummary}. 
-                                        Please provide a helpful, concise response.`
+                                        content: `A user named "${userName}" has asked about their subscriptions. Here is their subscription data: ${subscriptionSummary}. 
+                                        Please provide a helpful, concise response addressing them by name and maintaining the correct currency formats.`
                                     }
                                 ]
                             });

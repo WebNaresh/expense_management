@@ -113,7 +113,7 @@ export function AddSubscriptionDialog({
       await addSubscription(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["subscriptions", user?.id],
+        queryKey: ["subscriptions"],
       });
       toast.success("Subscription created successfully");
       form.reset({
