@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     const body2 = await request.json();
-    console.log(`🚀 ~ body2:`, body2)
+    console.info(`🚀 ~ body2:`, body2)
     try {
         // Parse the request body
         const body = await request.json();
