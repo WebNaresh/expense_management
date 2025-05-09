@@ -211,8 +211,8 @@ export async function POST(request: NextRequest) {
                                 };
 
                                 // Generate formatted list with appropriate currency symbols
-                                let formattedLists: string[] = [];
-                                let totalAmounts: string[] = [];
+                                const formattedLists: string[] = [];
+                                const totalAmounts: string[] = [];
 
                                 Object.entries(subscriptionsByCurrency).forEach(([currency, subs]) => {
                                     const symbol = currencySymbols[currency] || currency;
