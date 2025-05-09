@@ -106,7 +106,9 @@ export async function POST(request: NextRequest) {
     try {
         // Parse the request body
         const body = await request.json();
-        console.log(`🚀 ~ body:`, body)
+        console.log(`🚀 ~ body:`, body.data.entry[0].changes[0].value.messages[0].text.body)
+
+        console.log(`🚀 ~ JSON.stringify(body.data.entry):`, JSON.stringify(body.data.entry))
 
         // Validate the webhook payload against our schema
 
