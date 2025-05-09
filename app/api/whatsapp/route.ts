@@ -2,52 +2,7 @@ import { openai } from "@/lib/open_ai";
 import { prisma } from "@/lib/prisma";
 import { WhatsappMessageBuilder } from "@/lib/whatsapp_template_builder";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
-// Validation schema for incoming webhook messages
-const webhookMessageSchema = z.object({
-    object: z.string(),
-    entry: z.array(
-        z.object({
-            id: z.string(),
-            changes: z.array(
-                z.object({
-                    value: z.object({
-                        messaging_product: z.string(),
-                        metadata: z.object({
-                            display_phone_number: z.string(),
-                            phone_number_id: z.string(),
-                        }),
-                        contacts: z.array(
-                            z.object({
-                                profile: z.object({
-                                    name: z.string(),
-                                }),
-                                wa_id: z.string(),
-                            })
-                        ),
-                        messages: z.array(
-                            z.object({
-                                from: z.string(),
-                                id: z.string(),
-                                timestamp: z.string(),
-                                text: z.object({
-                                    body: z.string(),
-                                }).optional(),
-                                type: z.string(),
-                            })
-                        ),
-                    }),
-                    field: z.string(),
-                })
-            ),
-        })
-    ),
-});
-
-/**
- * Sends a message back to the user via WhatsApp API using the WhatsappMessageBuilder
- */
 async function sendWhatsAppMessage(phoneNumber: string, message: string) {
     try {
         const messageBuilder = new WhatsappMessageBuilder(phoneNumber)
@@ -154,15 +109,11 @@ export async function POST(request: NextRequest) {
         console.log(`🚀 ~ body:`, body)
 
         // Validate the webhook payload against our schema
-        const result = webhookMessageSchema.safeParse(body);
 
-        if (!result.success) {
-            console.error('Invalid webhook payload:', result.error);
-            return new NextResponse('Invalid webhook payload', { status: 400 });
-        }
+
 
         // Process each message in the webhook
-        for (const entry of result.data.entry) {
+        for (const entry of body.data.entry) {
             for (const change of entry.changes) {
                 const value = change.value;
 
