@@ -1,3 +1,5 @@
+import { openai } from "@/lib/open_ai";
+import { prisma } from "@/lib/prisma";
 import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -159,9 +161,27 @@ export async function POST(request: NextRequest) {
                 for (const message of value.messages || []) {
                     const senderNumber = message.from;
                     const messageContent = message.text?.body || '';
+                    const subscriptions = await prisma.subscription.findMany({
+                        where: {
+                            user: {
+                                whatsappNumber: senderNumber
+                            }
+                        },
+                        select: {
+                            name: true,
+                            amount: true,
+                            renewalDate: true,
+                        }
+                    })
 
                     if (messageContent.toLowerCase() === 'subscription') {
                         console.log(`User ${senderNumber} said: Subscription`);
+                        const response = await openai.chat.completions.create({
+                            model: "gpt-4o-mini",
+                            messages: [
+                                { role: "user", content: `Act as whatsapp bot and reply to the user ${JSON.stringify(subscriptions)}` }
+                            ]
+                        });
                     }
 
                     // Handle the incoming message
