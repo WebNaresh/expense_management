@@ -105,9 +105,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     const body2 = await request.json();
     console.info(`🚀 ~ body2:`, body2)
+    let body;
     try {
-        // Parse the request body
-        const body = await request.json();
+        // Parse the request body only once
+        body = await request.json();
         console.log(`🚀 ~ Received webhook:`, JSON.stringify(body));
 
         // WhatsApp webhook structure has 'object' and 'entry' at the top level
