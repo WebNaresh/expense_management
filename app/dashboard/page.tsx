@@ -1,5 +1,8 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { ArrowUp } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { ActiveSubscriptions } from "./_components/active-subscriptions";
 import { AddExpenseDialog } from "./_components/add-expense-dialog";
 import { AddLoanDialog } from "./_components/add-loan-dialog";
@@ -8,6 +11,8 @@ import { FinancialTrend } from "./_components/financial-trend";
 import { MonthlyExpenses } from "./_components/monthly-expenses";
 import { RecentExpenses } from "./_components/recent-expenses";
 import { RecentTransactions } from "./_components/recent-transactions";
+import DashboardLoader from "./loader";
+
 // Sample data
 const balanceData = {
   balance: 12000,
@@ -43,33 +48,6 @@ const expensesData = [
     category: "Entertainment",
     date: "May 5, 2023",
     icon: null,
-  },
-];
-
-const subscriptionsData = [
-  {
-    id: "1",
-    name: "Netflix",
-    amount: 499,
-    renewalDate: "May 15, 2023",
-    isActive: true,
-    isRenewalSoon: true,
-  },
-  {
-    id: "2",
-    name: "Spotify",
-    amount: 119,
-    renewalDate: "May 22, 2023",
-    isActive: true,
-    isRenewalSoon: false,
-  },
-  {
-    id: "3",
-    name: "Amazon Prime",
-    amount: 179,
-    renewalDate: "June 10, 2023",
-    isActive: true,
-    isRenewalSoon: false,
   },
 ];
 
@@ -165,7 +143,13 @@ const monthlyExpensesData = [
   },
 ];
 
-export default function Home() {
+export default function Dashboard() {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return <DashboardLoader />;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

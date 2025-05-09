@@ -179,7 +179,10 @@ export default function HomePage() {
                 variants={fadeIn}
                 className="flex flex-col sm:flex-row gap-4 pt-6"
               >
-                <Button variant={"secondary"} onClick={handleGetStarted}>
+                <Button
+                  className="bg-white text-black"
+                  onClick={handleGetStarted}
+                >
                   Get Started — It's Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -330,19 +333,11 @@ export default function HomePage() {
                     </div>
 
                     {/* Quick actions */}
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 bg-white"
-                      >
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <Button size="lg" className="w-[-webkit-available]">
                         <Plus className="w-4 h-4 mr-1" /> Add Expense
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 bg-white"
-                      >
+                      <Button size="lg" className="w-[-webkit-available]">
                         <ArrowDownUp className="w-4 h-4 mr-1" /> Transfer
                       </Button>
                     </div>
@@ -355,7 +350,7 @@ export default function HomePage() {
                     <div className="bg-emerald-100 p-2 rounded-md">
                       <TrendingUp className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span className="text-sm font-medium whitespace-nowrap text-emerald-600">
                       Track Expenses
                     </span>
                   </div>
@@ -366,7 +361,7 @@ export default function HomePage() {
                     <div className="bg-blue-100 p-2 rounded-md">
                       <PieChart className="w-4 h-4 text-blue-600" />
                     </div>
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span className="text-sm font-medium whitespace-nowrap text-blue-600">
                       Smart Analytics
                     </span>
                   </div>
