@@ -122,6 +122,10 @@ export async function POST(request: NextRequest) {
                     const senderNumber = message.from;
                     const messageContent = message.text?.body || '';
 
+                    if (messageContent.toLowerCase() === 'hi') {
+                        console.log(`User ${senderNumber} said: HI`);
+                    }
+
                     // Handle the incoming message
                     await handleIncomingMessage(senderNumber, messageContent);
                 }
