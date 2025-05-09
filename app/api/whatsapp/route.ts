@@ -103,52 +103,109 @@ export async function GET(request: NextRequest) {
  * This endpoint receives messages and events from WhatsApp
  */
 export async function POST(request: NextRequest) {
+    const body2 = await request.json();
+    console.log(`🚀 ~ body2:`, body2)
     try {
         // Parse the request body
         const body = await request.json();
-        console.log(`🚀 ~ body:`, body.data.entry[0].changes[0].value.messages[0].text.body)
+        console.log(`🚀 ~ Received webhook:`, JSON.stringify(body));
 
-        console.log(`🚀 ~ JSON.stringify(body.data.entry):`, JSON.stringify(body.data.entry))
-
-        // Validate the webhook payload against our schema
-
-
+        // WhatsApp webhook structure has 'object' and 'entry' at the top level
+        if (!body.object || !body.entry || !Array.isArray(body.entry)) {
+            console.error('Invalid webhook format', body);
+            return new NextResponse('Invalid webhook format', { status: 400 });
+        }
 
         // Process each message in the webhook
-        for (const entry of body.data.entry) {
+        for (const entry of body.entry) {
+            if (!entry.changes || !Array.isArray(entry.changes)) {
+                console.log('No changes in entry', entry);
+                continue;
+            }
+
             for (const change of entry.changes) {
+                if (!change.value || !change.value.messages || !Array.isArray(change.value.messages)) {
+                    console.log('No messages in change', change);
+                    continue;
+                }
+
                 const value = change.value;
 
                 // Process each message
-                for (const message of value.messages || []) {
+                for (const message of value.messages) {
+                    // Safety check for required fields
+                    if (!message.from || (!message.text && !message.interactive)) {
+                        console.log('Invalid message format', message);
+                        continue;
+                    }
+
                     const senderNumber = message.from;
-                    const messageContent = message.text?.body || '';
+                    let messageContent = '';
 
-                    const subscriptions = await prisma.subscription.findMany({
-                        where: {
-                            user: {
-                                whatsappNumber: senderNumber
-                            }
-                        },
-                        select: {
-                            name: true,
-                            amount: true,
-                            renewalDate: true,
+                    // Extract message content based on message type
+                    if (message.text && message.text.body) {
+                        messageContent = message.text.body;
+                    } else if (message.interactive) {
+                        // Handle interactive message responses
+                        if (message.interactive.button_reply) {
+                            messageContent = `BUTTON:${message.interactive.button_reply.id}`;
+                        } else if (message.interactive.list_reply) {
+                            messageContent = `LIST:${message.interactive.list_reply.id}`;
                         }
-                    });
+                    }
 
-                    if (messageContent.toLowerCase() === 'subscription') {
-                        console.log(`User ${senderNumber} said: Subscription ${JSON.stringify(subscriptions)} message: ${messageContent}`);
-                        const response = await openai.chat.completions.create({
-                            model: "gpt-4o-mini",
-                            messages: [
-                                { role: "user", content: `Act as whatsapp bot and reply to the user ${JSON.stringify(subscriptions)}` }
-                            ]
+                    console.log(`Processing message from ${senderNumber}: ${messageContent}`);
+
+                    try {
+                        const subscriptions = await prisma.subscription.findMany({
+                            where: {
+                                user: {
+                                    whatsappNumber: senderNumber
+                                }
+                            },
+                            select: {
+                                name: true,
+                                amount: true,
+                                renewalDate: true,
+                            }
                         });
-                        await sendWhatsAppMessage(senderNumber, response.choices[0].message.content || 'No subscriptions found');
-                    } else {
-                        // Handle the incoming message
-                        await handleIncomingMessage(senderNumber, messageContent);
+
+                        if (messageContent.toLowerCase() === 'subscription') {
+                            console.log(`User ${senderNumber} requested subscriptions: ${JSON.stringify(subscriptions)}`);
+                            const response = await openai.chat.completions.create({
+                                model: "gpt-4o-mini",
+                                messages: [
+                                    { role: "user", content: `Act as whatsapp bot and reply to the user ${JSON.stringify(subscriptions)}` }
+                                ]
+                            });
+                            await sendWhatsAppMessage(senderNumber, response.choices[0].message.content || 'No subscriptions found');
+                        } else if (messageContent.startsWith('BUTTON:') || messageContent.startsWith('LIST:')) {
+                            // Handle interactive responses
+                            const interactionId = messageContent.split(':')[1];
+                            console.log(`User ${senderNumber} clicked ${interactionId}`);
+
+                            if (interactionId === 'view_subscriptions') {
+                                // Handle view subscriptions button
+                                const subscriptionList = subscriptions.length > 0
+                                    ? subscriptions.map(sub => `- ${sub.name}: ₹${sub.amount} (renewal: ${new Date(sub.renewalDate).toLocaleDateString()})`).join('\n')
+                                    : 'You have no active subscriptions.';
+
+                                await sendWhatsAppMessage(senderNumber, `Your subscriptions:\n${subscriptionList}`);
+                            } else if (interactionId === 'add_expense') {
+                                // Handle add expense button
+                                await sendWhatsAppMessage(senderNumber, "To add an expense, please visit the app or reply with the expense details in this format: 'expense: [amount] for [description]'");
+                            } else if (interactionId === 'payment_reminder') {
+                                // Handle payment reminder button
+                                await sendWhatsAppMessage(senderNumber, "I'll remind you before your subscription payments are due.");
+                            } else {
+                                await sendWhatsAppMessage(senderNumber, `You selected: ${interactionId}`);
+                            }
+                        } else {
+                            // Handle the incoming message with the regular handler
+                            await handleIncomingMessage(senderNumber, messageContent);
+                        }
+                    } catch (error) {
+                        console.error(`Error processing message from ${senderNumber}:`, error);
                     }
                 }
             }
