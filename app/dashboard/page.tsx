@@ -1,5 +1,7 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
+import { ArrowUp } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useQueryState } from "nuqs";
 import { ActiveSubscriptions } from "./_components/active-subscriptions";
@@ -8,6 +10,7 @@ import { AddLoanDialog } from "./_components/add-loan-dialog";
 import { AddSubscriptionDialog } from "./_components/add-subscription-dialog";
 import { FinancialTrend } from "./_components/financial-trend";
 import { RecentTransactions } from "./_components/recent-transactions";
+import { UpdateMobileDialog } from "./_components/update-mobile-dialog";
 import DashboardLoader from "./loader";
 
 // Sample data
@@ -141,7 +144,8 @@ const monthlyExpensesData = [
 ];
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
+  console.log(`🚀 ~ session:`, session);
   const [isWhatsappConnected, setIsWhatsappConnected] = useQueryState(
     "isWhatsappConnected",
     {
@@ -153,13 +157,18 @@ export default function Dashboard() {
   if (status === "loading") {
     return <DashboardLoader />;
   }
-  console.log(`🚀 ~ session?.user:`, session?.user);
 
   if (isWhatsappConnected) {
     if (session?.user) {
       setIsWhatsappConnected(false);
     }
   }
+
+  // Handle successful mobile number update
+  const handleMobileUpdate = async () => {
+    // Refresh the session to get the updated user data
+    await update();
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
@@ -168,10 +177,65 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
+          {session?.user && (
+            <UpdateMobileDialog
+              userId={session.user.id}
+              currentNumber={session.user.whatsappNumber}
+              onSuccess={handleMobileUpdate}
+              initiallyOpen={!session.user.whatsappNumber}
+            />
+          )}
           <AddExpenseDialog />
-          <AddSubscriptionDialog user={session?.user} />
+          <AddSubscriptionDialog
+            user={
+              session?.user
+                ? {
+                    id: session.user.id,
+                  }
+                : null
+            }
+          />
           <AddLoanDialog />
         </div>
+      </div>
+
+      <div className="flex flex-row flex-wrap gap-4 mb-6">
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-emerald-500 p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Your Balance</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold mb-2">
+              ₹{balanceData.balance.toLocaleString()}
+            </p>
+            <div className="flex items-center gap-1 text-sm text-emerald-600">
+              <ArrowUp className="h-4 w-4" />
+              <span>+{balanceData.change}% from last month</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-red-600 p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Money You Owe</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold">
+              ₹{summaryData.totalOwed.toLocaleString()}
+            </p>
+          </div>
+        </Card>
+
+        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
+          <div className="bg-[#0A2647] p-4 rounded-t-lg">
+            <h3 className="text-lg font-medium text-white">Money to Collect</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-4xl font-bold">
+              ₹{summaryData.totalReceived.toLocaleString()}
+            </p>
+          </div>
+        </Card>
       </div>
 
       <ActiveSubscriptions />

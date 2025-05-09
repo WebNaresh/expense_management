@@ -34,6 +34,7 @@ export const authOptions: NextAuthOptions = {
         let dbUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
+        console.log(`🚀 ~ dbUser:`, dbUser)
 
         // If user doesn't exist, create new user
         if (!dbUser) {
@@ -53,7 +54,25 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      console.log(`🚀 ~ trigger:`, trigger)
+      // Handle session update
+      if (trigger === "update") {
+        // Fetch the latest user data from the database
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+        });
+
+        if (dbUser) {
+          // Update token with the latest user data
+          token.whatsappNumber = dbUser.whatsappNumber || null;
+          token.whatsappVerified = dbUser.whatsappVerified;
+          // Add any other fields that need to be updated
+        }
+
+        return token;
+      }
+
       if (user) {
         // Find the user in database with all fields
         const dbUser = await prisma.user.findUnique({
@@ -63,7 +82,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           // Add all user information to the token
           token.id = dbUser.id;
-          token.whatsappNumber = dbUser.whatsappNumber || "";
+          token.whatsappNumber = dbUser.whatsappNumber || null;
           token.whatsappVerified = dbUser.whatsappVerified;
           // Add any other fields from the Prisma User model that are needed in the session
         }
@@ -76,7 +95,7 @@ export const authOptions: NextAuthOptions = {
         user: {
           ...session.user,
           id: token.id as string,
-          whatsappNumber: token.whatsappNumber as string,
+          whatsappNumber: token.whatsappNumber as string | null,
           whatsappVerified: token.whatsappVerified as boolean,
         },
       };
@@ -111,7 +130,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      whatsappNumber: string;
+      whatsappNumber: string | null;
       whatsappVerified: boolean;
     }
   }
@@ -121,7 +140,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    whatsappNumber: string;
+    whatsappNumber: string | null;
     whatsappVerified: boolean;
   }
 }

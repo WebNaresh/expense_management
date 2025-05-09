@@ -25,6 +25,7 @@ model User {
   receivedLoans    LoanModel[]    @relation("ReceivedLoans")
   subscriptions    Subscription[]
 
+  @@unique([whatsappNumber, email])
   @@index([email])
   @@index([whatsappNumber])
   @@index([name])
