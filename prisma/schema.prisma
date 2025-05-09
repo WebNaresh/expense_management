@@ -14,15 +14,16 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(uuid())
-  name           String         @unique
-  email          String         @unique
-  whatsappNumber String         @unique
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  givenLoans     LoanModel[]    @relation("GivenLoans")
-  receivedLoans  LoanModel[]    @relation("ReceivedLoans")
-  subscriptions  Subscription[]
+  id               String         @id @default(uuid())
+  name             String
+  email            String         @unique
+  whatsappVerified Boolean        @default(false)
+  whatsappNumber   String         @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  givenLoans       LoanModel[]    @relation("GivenLoans")
+  receivedLoans    LoanModel[]    @relation("ReceivedLoans")
+  subscriptions    Subscription[]
 
   @@index([email])
   @@index([whatsappNumber])

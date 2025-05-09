@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { ArrowUp } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useQueryState } from "nuqs";
 import { ActiveSubscriptions } from "./_components/active-subscriptions";
 import { AddExpenseDialog } from "./_components/add-expense-dialog";
 import { AddLoanDialog } from "./_components/add-loan-dialog";
@@ -145,9 +146,23 @@ const monthlyExpensesData = [
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
+  const [isWhatsappConnected, setIsWhatsappConnected] = useQueryState(
+    "isWhatsappConnected",
+    {
+      defaultValue: false,
+      parse: (value) => value === "true",
+    }
+  );
 
   if (status === "loading") {
     return <DashboardLoader />;
+  }
+  console.log(`🚀 ~ session?.user:`, session?.user);
+
+  if (isWhatsappConnected) {
+    if (session?.user) {
+      setIsWhatsappConnected(false);
+    }
   }
 
   return (

@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowLeft, Home, Search } from "lucide-react";
@@ -53,8 +52,6 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-
       <main className="flex-grow flex items-center justify-center p-4 md:p-8">
         <div className="container max-w-4xl">
           <motion.div

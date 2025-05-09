@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   CreditCard,
@@ -25,7 +26,7 @@ import {
   User,
   Wallet,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,8 +43,13 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { data: session } = useSession();
+  const [mounted, setMounted] = useState(false);
+  const { data: session, status } = useSession();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,6 +59,11 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Prevent hydration issues by not rendering until mounted
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -69,14 +80,14 @@ export function Navbar() {
             href="/"
             className="flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] pl-2"
           >
-            <div className="relative group">
+            <div className="relative group h-10 w-10">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-20 group-hover:opacity-30 blur transition duration-200" />
               <Image
                 src="/logo.png"
                 alt="SpendIt"
-                width={50}
-                height={50}
-                className="relative"
+                width={100}
+                height={100}
+                className="relative top-0 rounded-lg object-cover h-20 w-20"
               />
             </div>
             <span
@@ -111,151 +122,237 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
-            {session ? (
+            {status === "loading" ? (
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            ) : session ? (
               <>
-                <div
-                  className={cn(
-                    "relative px-4 py-2 rounded-full backdrop-blur-sm border transition-colors duration-200",
-                    isScrolled
-                      ? "bg-white/5 border-white/10"
-                      : "bg-white/10 border-white/20"
-                  )}
-                >
-                  <p
+                <div className="flex items-center gap-3">
+                  <div
                     className={cn(
-                      "text-sm font-medium transition-colors duration-200",
+                      "flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-200",
                       isScrolled
-                        ? "bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500"
-                        : "text-white"
+                        ? "bg-white/5 text-primary"
+                        : "bg-white/10 text-white"
                     )}
                   >
-                    Welcome back, {session.user?.name || "User"}!
-                  </p>
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 opacity-0 hover:opacity-100 transition-opacity" />
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative group"
-                    >
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
-                      <User
+                    <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      {session.user?.image ? (
+                        <>
+                          <Skeleton className="h-full w-full rounded-full absolute" />
+                          <Image
+                            src={session.user.image}
+                            alt={session.user.name || "User"}
+                            fill
+                            className="rounded-full object-cover"
+                            onLoadingComplete={(img) => {
+                              img.classList.remove("opacity-0");
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.src = "/fallback-avatar.png";
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium leading-none">
+                        {session.user?.name?.split(" ")[0] || "User"}
+                      </p>
+                      <p
                         className={cn(
-                          "h-5 w-5 relative transition-colors duration-200",
-                          isScrolled ? "text-emerald-600" : "text-white"
+                          "text-xs leading-none mt-1",
+                          isScrolled ? "text-primary/80" : "text-white/80"
                         )}
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => signOut()}>
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      >
+                        Welcome back!
+                      </p>
+                    </div>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "relative group h-8 w-8",
+                          isScrolled
+                            ? "hover:bg-primary/10"
+                            : "hover:bg-white/10"
+                        )}
+                      >
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                        <Settings
+                          className={cn(
+                            "h-4 w-4 transition-all",
+                            isScrolled ? "text-primary" : "text-white",
+                            "group-hover:rotate-90"
+                          )}
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem className="flex items-center">
+                        <span className="flex-1">New Features Available!</span>
+                        <span className="h-2 w-2 bg-red-500 rounded-full" />
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => signOut({ callbackUrl: "/" })}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </>
             ) : (
-              <Link href="/login">
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "transition-colors duration-200",
-                    isScrolled
-                      ? "border-primary text-primary hover:bg-primary/10"
-                      : "border-white text-white hover:bg-white/10"
-                  )}
-                >
-                  Sign In
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  signIn("google", {
+                    redirect: false,
+                    callbackUrl: "/dashboard",
+                  })
+                }
+                className={cn(
+                  "transition-colors bg-transparent duration-200",
+                  isScrolled
+                    ? "border-primary text-primary hover:bg-primary/10"
+                    : "border-white text-white hover:bg-white/10"
+                )}
+              >
+                Sign In
+              </Button>
             )}
           </div>
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
+            <SheetTrigger asChild className="md:hidden">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 className={cn(
-                  "relative md:hidden group border-white/10 transition-colors duration-200",
-                  isScrolled ? "bg-white/5" : "bg-white/10"
+                  "relative group h-8 w-8",
+                  isScrolled ? "hover:bg-primary/10" : "hover:bg-white/10"
                 )}
               >
-                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-emerald-500/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
                 <Menu
                   className={cn(
-                    "h-5 w-5 relative transition-colors duration-200",
-                    isScrolled ? "text-muted-foreground" : "text-white"
+                    "h-4 w-4 transition-all",
+                    isScrolled ? "text-primary" : "text-white"
                   )}
                 />
-                <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] p-0">
+            <SheetContent side="left" className="w-72 p-0">
               <SheetHeader className="p-4 border-b">
-                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetTitle className="flex items-center gap-2">
+                  <Image
+                    src="/logo.png"
+                    alt="SpendIt"
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500">
+                    SpendIt
+                  </span>
+                </SheetTitle>
               </SheetHeader>
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-auto py-2">
-                  {navLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted",
-                        pathname === item.href && "bg-muted"
-                      )}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-                <div className="border-t p-4">
-                  {session ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 px-2 py-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {session.user?.name || "User"}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {session.user?.email}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start gap-2"
-                        onClick={() => {
-                          signOut();
-                          setIsOpen(false);
-                        }}
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                      </Button>
+              <div className="flex flex-col py-2">
+                {navLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors",
+                      "hover:bg-primary/10",
+                      pathname === item.href && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                ))}
+                {status === "loading" ? (
+                  <div className="flex items-center gap-3 px-4 py-4 mt-auto border-t">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-16" />
                     </div>
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="block"
-                      onClick={() => setIsOpen(false)}
+                  </div>
+                ) : session ? (
+                  <div className="mt-auto border-t">
+                    <div className="flex items-center gap-3 p-4">
+                      <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        {session.user?.image ? (
+                          <>
+                            <Skeleton className="h-full w-full rounded-full absolute" />
+                            <Image
+                              src={session.user.image}
+                              alt={session.user.name || "User"}
+                              fill
+                              className="rounded-full object-cover"
+                              onLoadingComplete={(img) => {
+                                img.classList.remove("opacity-0");
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.src = "/fallback-avatar.png";
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium leading-none">
+                          {session.user?.name?.split(" ")[0] || "User"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Welcome back!
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2 text-red-600 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        signOut({ callbackUrl: "/" });
+                        setIsOpen(false);
+                      }}
                     >
-                      <Button className="w-full justify-start gap-2">
-                        <User className="w-4 h-4" />
-                        Sign In
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-auto border-t p-4">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        signIn("google", {
+                          callbackUrl: "/dashboard",
+                        });
+                        setIsOpen(false);
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>
