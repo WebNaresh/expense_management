@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { AlertCircle, CameraIcon, XIcon } from "lucide-react";
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -27,7 +28,7 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
-    const cleanupCamera = () => {
+    const cleanupCamera = useCallback(() => {
       if (!videoRef.current) return;
 
       try {
@@ -43,9 +44,9 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
       } catch (error) {
         console.error("Error cleaning up camera:", error);
       }
-    };
+    }, []);
 
-    const startCamera = async () => {
+    const startCamera = useCallback(async () => {
       try {
         cleanupCamera();
 
@@ -84,7 +85,7 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
         setIsCameraActive(false);
         cleanupCamera();
       }
-    };
+    }, [cleanupCamera]);
 
     useImperativeHandle(ref, () => ({
       stopCamera: cleanupCamera,
