@@ -26,7 +26,10 @@ import InputSelect from "./components/InputSelect";
 import InputSwitch from "./components/InputSwitch";
 import MultiImageInput from "./components/multiImageInput";
 
-export interface BaseInputProps<T extends FieldValues = any> {
+// Base type for form values
+type DefaultFormValues = Record<string, unknown>;
+
+export interface BaseInputProps<T extends FieldValues = DefaultFormValues> {
   label?: string;
   name: Path<T>;
   placeholder?: string;
@@ -56,7 +59,7 @@ export interface BaseInputProps<T extends FieldValues = any> {
   required?: boolean;
 }
 
-export interface InputFieldProps<T extends FieldValues = any>
+export interface InputFieldProps<T extends FieldValues = DefaultFormValues>
   extends BaseInputProps<T> {
   options?: {
     value: string | null;

@@ -35,7 +35,6 @@ const ImageInput = <T extends FieldValues>({
   className,
   disabled,
   required = false,
-  type,
   description,
 }: Omit<BaseInputProps<T>, "form">) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

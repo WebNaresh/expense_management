@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import ReactCrop, {
   Crop,
@@ -46,11 +47,9 @@ export function ImageCropper({
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imgRef = useRef<HTMLImageElement>(null);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    setImageSize({ width, height });
 
     const initialCrop = centerAspectCrop(width, height, aspectRatio);
     setCrop(initialCrop);
@@ -125,13 +124,17 @@ export function ImageCropper({
           className="max-h-[70vh]"
           circularCrop
         >
-          <img
+          <Image
             ref={imgRef}
             src={imageUrl}
             onLoad={onImageLoad}
             className="max-w-full"
             alt="Crop me"
             style={{ maxHeight: "70vh", width: "auto" }}
+            width={800}
+            height={800}
+            priority
+            unoptimized
           />
         </ReactCrop>
       </div>

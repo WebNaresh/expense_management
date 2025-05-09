@@ -53,8 +53,6 @@ const categories = [
   { label: "Other", value: "other" },
 ] as const;
 
-type Category = (typeof categories)[number]["value"];
-
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",

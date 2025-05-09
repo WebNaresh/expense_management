@@ -35,7 +35,6 @@ const InputRadio = <T extends FieldValues>({
   Icon,
   iconClassName,
   required = false,
-  type,
   description,
 }: InputRadioProps<T>) => {
   const form = useFormContext<T>();

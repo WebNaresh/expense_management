@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 import { useFormContext } from "react-hook-form";
 import { InputFieldProps } from "../InputField";
 
-type Props = {};
-
 const InputTextArea = (props: Omit<InputFieldProps, "form">) => {
   const {
     label,

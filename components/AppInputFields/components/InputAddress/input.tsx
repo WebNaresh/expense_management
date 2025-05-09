@@ -4,13 +4,8 @@ import { useFormContext } from "react-hook-form";
 import { InputFieldProps } from "../../InputField";
 import AddressInput from "./components/mini_form";
 
-interface PlaceOption {
-  description: string;
-  placeId: string;
-}
-
 const InputAddress: React.FC<Omit<InputFieldProps, "form">> = (props) => {
-  const { name, description } = props;
+  const { name } = props;
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const form = useFormContext();

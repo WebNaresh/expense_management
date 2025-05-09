@@ -95,7 +95,7 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
       return () => {
         cleanupCamera();
       };
-    }, []);
+    }, [startCamera]);
 
     const takeSelfie = () => {
       if (!videoRef.current || !canvasRef.current) return;

@@ -115,7 +115,7 @@ const InputSelect: React.FC<Omit<InputFieldProps, "form">> = (props) => {
     return props.is_sorted
       ? [...options].sort((a, b) => a.label.localeCompare(b.label))
       : options;
-  }, [options]);
+  }, [options, props.is_sorted]);
 
   return (
     <FormField

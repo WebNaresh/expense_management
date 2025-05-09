@@ -47,7 +47,14 @@ const InputSwitch = <T extends FieldValues>({
           )}
         >
           <div className="space-y-0.5">
-            <FormLabel className="text-base">{label}</FormLabel>
+            <FormLabel
+              className={`text-base${
+                required &&
+                "after:content-['*'] after:ml-0.5 after:text-red-500"
+              }`}
+            >
+              {label}
+            </FormLabel>
             {description && (
               <p className="text-sm text-muted-foreground">{description}</p>
             )}
