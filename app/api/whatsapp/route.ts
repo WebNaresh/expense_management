@@ -171,13 +171,45 @@ export async function POST(request: NextRequest) {
 
                         if (messageContent.toLowerCase() === 'subscription') {
                             console.log(`User ${senderNumber} requested subscriptions: ${JSON.stringify(subscriptions)}`);
+
+                            // Create a user-friendly subscription summary
+                            let subscriptionSummary;
+                            if (subscriptions.length === 0) {
+                                subscriptionSummary = "You don't have any active subscriptions yet.";
+                            } else {
+                                const totalAmount = subscriptions.reduce((sum, sub) => sum + sub.amount, 0);
+                                const formattedList = subscriptions.map(
+                                    sub => `- ${sub.name}: ₹${sub.amount} (renews on ${new Date(sub.renewalDate).toLocaleDateString()})`
+                                ).join('\n');
+
+                                subscriptionSummary = `Here are your active subscriptions:\n\n${formattedList}\n\nTotal monthly spending: ₹${totalAmount}`;
+                            }
+
+                            // Improved OpenAI prompt with more guidance
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
-                                    { role: "user", content: `Act as whatsapp bot and reply to the user ${JSON.stringify(subscriptions)}` }
+                                    {
+                                        role: "system",
+                                        content: `You are a helpful WhatsApp bot for an expense management app. 
+                                        When responding about subscriptions:
+                                        1. Be concise and friendly
+                                        2. Focus on providing information about the subscriptions
+                                        3. If there are subscriptions, mention when they're due and the total amount
+                                        4. If there are no subscriptions, suggest how to add one
+                                        5. Avoid phrases like "I'm an AI" or "As an AI"
+                                        6. Don't ask questions about what the user wants - just provide the subscription info
+                                        7. Sign off as "Expense Manager Bot"`
+                                    },
+                                    {
+                                        role: "user",
+                                        content: `A user has asked about their subscriptions. Here is their subscription data: ${subscriptionSummary}. 
+                                        Please provide a helpful, concise response.`
+                                    }
                                 ]
                             });
-                            await sendWhatsAppMessage(senderNumber, response.choices[0].message.content || 'No subscriptions found');
+
+                            await sendWhatsAppMessage(senderNumber, response.choices[0].message.content || subscriptionSummary);
                         } else if (messageContent.startsWith('BUTTON:') || messageContent.startsWith('LIST:')) {
                             // Handle interactive responses
                             const interactionId = messageContent.split(':')[1];
