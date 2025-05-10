@@ -25,6 +25,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 - intent: The detected intent
                 - task_name: (For CREATE_TASK or COMPLETE_TASK) The name of the task
                 - task_index: (For COMPLETE_TASK) The index or number of the task mentioned (if any)
+                - task_position: (For COMPLETE_TASK) Any positional reference like "first", "second", "last", etc.
                 - due_date: (Only for CREATE_TASK) The due date/time in ISO format
                 - confidence: A number between 0 and 1 indicating your confidence`
             },
@@ -184,20 +185,47 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 // Variable to store the task to be completed
                 let taskToComplete: Task | undefined;
 
-                // Try to find the task by index first (if provided)
-                if (intentData.task_index) {
+                // Try to find the task by position references (first, second, last, etc.)
+                if (intentData.task_position && !taskToComplete) {
+                    const position = intentData.task_position.toLowerCase();
+                    if (position === 'first' || position === '1st') {
+                        taskToComplete = pendingTasks[0];
+                    } else if (position === 'second' || position === '2nd') {
+                        taskToComplete = pendingTasks[1];
+                    } else if (position === 'third' || position === '3rd') {
+                        taskToComplete = pendingTasks[2];
+                    } else if (position === 'fourth' || position === '4th') {
+                        taskToComplete = pendingTasks[3];
+                    } else if (position === 'fifth' || position === '5th') {
+                        taskToComplete = pendingTasks[4];
+                    } else if (position === 'last') {
+                        taskToComplete = pendingTasks[pendingTasks.length - 1];
+                    }
+                }
+
+                // Try to find the task by index if position didn't work
+                if (!taskToComplete && intentData.task_index) {
                     const index = parseInt(intentData.task_index) - 1;
                     if (index >= 0 && index < pendingTasks.length) {
                         taskToComplete = pendingTasks[index];
                     }
                 }
 
-                // If no task found by index, try to find by name
+                // If no task found by index or position, try to find by name
                 if (!taskToComplete && intentData.task_name) {
                     const taskName = intentData.task_name.toLowerCase();
                     taskToComplete = pendingTasks.find(task =>
                         task.name.toLowerCase().includes(taskName)
                     );
+                }
+
+                // Special case: If message simply says something is completed without specifics
+                // and there's only one pending task, assume it's that one
+                if (!taskToComplete && pendingTasks.length === 1 &&
+                    (message.toLowerCase().includes("completed") ||
+                        message.toLowerCase().includes("done") ||
+                        message.toLowerCase().includes("finished"))) {
+                    taskToComplete = pendingTasks[0];
                 }
 
                 // If no task found, ask for clarification
@@ -206,7 +234,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                     pendingTasks.forEach((task, i) => {
                         response += `${i + 1}. ${task.name}\n`;
                     });
-                    response += "\nPlease specify which task to complete by name or number.";
+                    response += "\nPlease specify which task to complete by saying something like \"first task is completed\" or \"mark task 2 as done\".";
                     return response;
                 }
 
@@ -235,7 +263,7 @@ async function generateGeneralResponse(message: string) {
                 content: `You are a helpful WhatsApp assistant for an expense management app that can also handle tasks.
                 When responding:
                 1. Be concise and friendly
-                2. If the user mentions tasks, remind them they can use phrases like "add task to call Vivek at 10am", "tell me my tasks", "show me today's tasks", or "mark task 1 as completed"
+                2. If the user mentions tasks, remind them they can use phrases like "add task to call Vivek at 10am", "tell me my tasks", "show me today's tasks", or "mark first task as completed"
                 3. If the user mentions expenses or subscriptions, be helpful about those features
                 4. Keep responses brief and to the point
                 5. Sign off as "Expense Manager Bot"`
