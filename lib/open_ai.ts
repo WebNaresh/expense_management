@@ -7,27 +7,34 @@ export const openai = new OpenAI({
 });
 
 export const handleIncomingMessage = async (message: string, user_number: string) => {
-    // First, use OpenAI to understand the user's intent
+    // First, use OpenAI to understand what the user wants to do
+    // This removes the need for exact pattern matching and allows for natural, informal language
     const intentAnalysis = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
             {
                 role: "system",
-                content: `You are an intent classifier for a WhatsApp bot that manages tasks and expenses.
-                Analyze the user's message and output ONLY ONE of these intents:
-                - CREATE_TASK: User wants to create a task (extract task_name and due_date)
-                - VIEW_TASKS: User wants to see their tasks
-                - VIEW_TODAYS_TASKS: User specifically wants to see today's tasks
-                - COMPLETE_TASK: User wants to mark a task as completed (extract task_name or task_index)
-                - OTHER: Any other query or conversation
+                content: `You are a task management assistant that analyzes user messages.
+                The user may write in informal language, with typos, grammatical errors, or slang.
                 
-                Format your response as a JSON object with these fields:
-                - intent: The detected intent
-                - task_name: (For CREATE_TASK or COMPLETE_TASK) The name of the task
-                - task_index: (For COMPLETE_TASK) The index or number of the task mentioned (if any)
-                - task_position: (For COMPLETE_TASK) Any positional reference like "first", "second", "last", etc.
-                - due_date: (Only for CREATE_TASK) The due date/time in ISO format
-                - confidence: A number between 0 and 1 indicating your confidence`
+                Analyze the message and determine what the user wants to do with their tasks.
+                Your ONLY goal is to categorize the intent and extract relevant details.
+                
+                Respond with ONLY a JSON object with these fields:
+                - intent: One of ["CREATE_TASK", "VIEW_TASKS", "VIEW_TODAYS_TASKS", "COMPLETE_TASK", "OTHER"]
+                - details: An object with any of these fields as appropriate:
+                  * task_name: The name of a task to create or complete
+                  * task_position: Words like "first", "last", "1st" or ordinal references
+                  * task_index: Any numerical task reference (e.g., "task 2" → 2)
+                  * date: For tasks with dates, in ISO format if possible
+                - confidence: A number from 0 to 1 indicating how confident you are in your interpretation
+                
+                Examples:
+                "add task call mom" → {"intent": "CREATE_TASK", "details": {"task_name": "call mom"}, "confidence": 0.9}
+                "pls rmind me to buy milk tmrw" → {"intent": "CREATE_TASK", "details": {"task_name": "buy milk", "date": "<tomorrow's date>"}, "confidence": 0.8}
+                "1st one done" → {"intent": "COMPLETE_TASK", "details": {"task_position": "first"}, "confidence": 0.9}
+                "wat i need 2 do 2day" → {"intent": "VIEW_TODAYS_TASKS", "details": {}, "confidence": 0.85}
+                "done with calling doctor" → {"intent": "COMPLETE_TASK", "details": {"task_name": "calling doctor"}, "confidence": 0.9}`
             },
             { role: "user", content: message }
         ],
@@ -35,10 +42,11 @@ export const handleIncomingMessage = async (message: string, user_number: string
     });
 
     try {
-        // Parse the intent analysis response
-        const intentData = JSON.parse(intentAnalysis.choices[0].message.content || "{}");
-        const intent = intentData.intent || "OTHER";
-        const confidence = intentData.confidence || 0;
+        // Parse the AI's interpretation
+        const analysis = JSON.parse(intentAnalysis.choices[0].message.content || "{}");
+        const intent = analysis.intent || "OTHER";
+        const details = analysis.details || {};
+        const confidence = analysis.confidence || 0;
 
         // Only process intents with reasonable confidence
         if (confidence < 0.6) {
@@ -48,16 +56,16 @@ export const handleIncomingMessage = async (message: string, user_number: string
         // Handle different intents
         switch (intent) {
             case "CREATE_TASK": {
-                if (!intentData.task_name) {
-                    return "I couldn't understand the task details. Please specify what task you'd like to add.";
+                if (!details.task_name) {
+                    return "I couldn't understand what task you'd like to add. Could you please try again?";
                 }
 
-                const taskName = intentData.task_name;
+                const taskName = details.task_name;
                 let dueDate;
 
                 try {
                     // Try to parse the due date from AI's response
-                    dueDate = intentData.due_date ? new Date(intentData.due_date) : new Date();
+                    dueDate = details.date ? new Date(details.date) : new Date();
 
                     // If date is invalid, use current date/time
                     if (isNaN(dueDate.getTime())) {
@@ -70,12 +78,12 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 // Create the task
                 await create_task(
                     taskName,
-                    `Task created via WhatsApp message: "${message}"`,
+                    `Task created via WhatsApp: "${message}"`,
                     dueDate.toISOString(),
                     user_number
                 );
 
-                return `✅ Task created: "${taskName}" scheduled for ${dueDate.toLocaleString('en-US', {
+                return `✅ Added: "${taskName}" for ${dueDate.toLocaleString('en-US', {
                     hour: 'numeric',
                     minute: 'numeric',
                     hour12: true,
@@ -90,7 +98,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 const tasks = await search_user_tasks(user_number);
 
                 if (tasks.length === 0) {
-                    return "You don't have any tasks scheduled at the moment.";
+                    return "You don't have any tasks yet.";
                 }
 
                 // Group tasks by completion status
@@ -101,7 +109,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 let response = "📋 Your Tasks:\n\n";
 
                 if (pendingTasks.length > 0) {
-                    response += "Pending Tasks:\n";
+                    response += "To Do:\n";
                     pendingTasks.forEach((task, i) => {
                         const dueDate = new Date(task.dueDate);
                         response += `${i + 1}. ${task.name} - Due: ${dueDate.toLocaleString('en-US', {
@@ -117,7 +125,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
 
                 if (completedTasks.length > 0) {
                     if (pendingTasks.length > 0) response += "\n";
-                    response += "Completed Tasks:\n";
+                    response += "Completed:\n";
                     completedTasks.slice(0, 3).forEach(task => { // Show only the 3 most recent completed tasks
                         response += `✓ ${task.name}\n`;
                     });
@@ -140,7 +148,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 const todayTasks = await search_user_tasks_by_date(user_number, startOfDay, endOfDay);
 
                 if (todayTasks.length === 0) {
-                    return "You don't have any tasks scheduled for today.";
+                    return "You don't have any tasks for today.";
                 }
 
                 // Group tasks by completion status
@@ -151,7 +159,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 let response = "📋 Today's Tasks:\n\n";
 
                 if (pendingTasks.length > 0) {
-                    response += "Pending Tasks:\n";
+                    response += "To Do:\n";
                     pendingTasks.forEach((task, i) => {
                         const dueDate = new Date(task.dueDate);
                         response += `${i + 1}. ${task.name} - Due: ${dueDate.toLocaleString('en-US', {
@@ -164,7 +172,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
 
                 if (completedTasks.length > 0) {
                     if (pendingTasks.length > 0) response += "\n";
-                    response += "Completed Tasks:\n";
+                    response += "Completed:\n";
                     completedTasks.forEach(task => {
                         response += `✓ ${task.name}\n`;
                     });
@@ -185,70 +193,69 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 // Variable to store the task to be completed
                 let taskToComplete: Task | undefined;
 
-                // Try to find the task by position references (first, second, last, etc.)
-                if (intentData.task_position && !taskToComplete) {
-                    const position = intentData.task_position.toLowerCase();
-                    if (position === 'first' || position === '1st') {
+                // Try to identify the task using multiple methods in order of specificity
+
+                // 1. Try by position reference (first, second, last)
+                if (details.task_position && !taskToComplete) {
+                    const position = details.task_position.toLowerCase();
+
+                    if (position.includes('first') || position.includes('1st')) {
                         taskToComplete = pendingTasks[0];
-                    } else if (position === 'second' || position === '2nd') {
+                    } else if (position.includes('second') || position.includes('2nd')) {
                         taskToComplete = pendingTasks[1];
-                    } else if (position === 'third' || position === '3rd') {
+                    } else if (position.includes('third') || position.includes('3rd')) {
                         taskToComplete = pendingTasks[2];
-                    } else if (position === 'fourth' || position === '4th') {
+                    } else if (position.includes('fourth') || position.includes('4th')) {
                         taskToComplete = pendingTasks[3];
-                    } else if (position === 'fifth' || position === '5th') {
+                    } else if (position.includes('fifth') || position.includes('5th')) {
                         taskToComplete = pendingTasks[4];
-                    } else if (position === 'last') {
+                    } else if (position.includes('last')) {
                         taskToComplete = pendingTasks[pendingTasks.length - 1];
                     }
                 }
 
-                // Try to find the task by index if position didn't work
-                if (!taskToComplete && intentData.task_index) {
-                    const index = parseInt(intentData.task_index) - 1;
-                    if (index >= 0 && index < pendingTasks.length) {
+                // 2. Try by numerical index
+                if (!taskToComplete && details.task_index) {
+                    const index = parseInt(String(details.task_index)) - 1;
+                    if (!isNaN(index) && index >= 0 && index < pendingTasks.length) {
                         taskToComplete = pendingTasks[index];
                     }
                 }
 
-                // If no task found by index or position, try to find by name
-                if (!taskToComplete && intentData.task_name) {
-                    const taskName = intentData.task_name.toLowerCase();
+                // 3. Try by name matching
+                if (!taskToComplete && details.task_name) {
+                    const taskName = details.task_name.toLowerCase();
                     taskToComplete = pendingTasks.find(task =>
                         task.name.toLowerCase().includes(taskName)
                     );
                 }
 
-                // Special case: If message simply says something is completed without specifics
-                // and there's only one pending task, assume it's that one
-                if (!taskToComplete && pendingTasks.length === 1 &&
-                    (message.toLowerCase().includes("completed") ||
-                        message.toLowerCase().includes("done") ||
-                        message.toLowerCase().includes("finished"))) {
+                // 4. If only one task and no specific reference, assume they mean that task
+                if (!taskToComplete && pendingTasks.length === 1) {
                     taskToComplete = pendingTasks[0];
                 }
 
                 // If no task found, ask for clarification
                 if (!taskToComplete) {
-                    let response = "I couldn't identify which task you want to mark as completed. Here are your pending tasks:\n\n";
+                    let response = "I'm not sure which task you want to mark as done. Here are your tasks:\n\n";
                     pendingTasks.forEach((task, i) => {
                         response += `${i + 1}. ${task.name}\n`;
                     });
-                    response += "\nPlease specify which task to complete by saying something like \"first task is completed\" or \"mark task 2 as done\".";
+                    response += "\nYou can say something like \"first one done\" or \"completed call mom\".";
                     return response;
                 }
 
                 // Complete the task
                 await complete_task(taskToComplete.id);
 
-                return `✅ Task "${taskToComplete.name}" marked as completed!`;
+                return `✅ Marked as completed: "${taskToComplete.name}"`;
             }
 
             default:
                 return generateGeneralResponse(message);
         }
     } catch (error) {
-        console.error("Error processing intent:", error);
+        console.error("Error processing message:", error);
         return generateGeneralResponse(message);
     }
 };
@@ -260,19 +267,23 @@ async function generateGeneralResponse(message: string) {
         messages: [
             {
                 role: "system",
-                content: `You are a helpful WhatsApp assistant for an expense management app that can also handle tasks.
+                content: `You are a helpful WhatsApp assistant for an expense and task management app.
                 When responding:
                 1. Be concise and friendly
-                2. If the user mentions tasks, remind them they can use phrases like "add task to call Vivek at 10am", "tell me my tasks", "show me today's tasks", or "mark first task as completed"
-                3. If the user mentions expenses or subscriptions, be helpful about those features
-                4. Keep responses brief and to the point
+                2. The user may write in informal language with spelling/grammar errors, but respond naturally
+                3. If the user seems to be trying to manage tasks, suggest commands like:
+                   - "add task buy milk"
+                   - "what are my tasks"
+                   - "tasks for today"
+                   - "mark first task done"
+                4. Keep responses brief
                 5. Sign off as "Expense Manager Bot"`
             },
             { role: "user", content: message }
         ],
     });
 
-    return response.choices[0].message.content || "I'm not sure how to respond to that. Can you try again?";
+    return response.choices[0].message.content || "I'm not sure what you mean. Try asking about your tasks or expenses?";
 }
 
 // Task-related database functions
@@ -319,20 +330,6 @@ export const create_task = async (task_name: string, task_description: string, t
                     whatsappNumber: user_number
                 }
             }
-        },
-    });
-    return task;
-};
-
-const update_task = async (task_id: string, task_name: string, task_description: string, task_due_date: string) => {
-    const task = await prisma.task.update({
-        where: {
-            id: task_id
-        },
-        data: {
-            name: task_name,
-            description: task_description,
-            dueDate: new Date(task_due_date),
         },
     });
     return task;
