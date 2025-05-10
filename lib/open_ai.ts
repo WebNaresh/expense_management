@@ -57,7 +57,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                     if (isNaN(dueDate.getTime())) {
                         dueDate = new Date();
                     }
-                } catch (error) {
+                } catch (_error) {
                     dueDate = new Date();
                 }
 
@@ -96,9 +96,9 @@ export const handleIncomingMessage = async (message: string, user_number: string
 
                 if (pendingTasks.length > 0) {
                     response += "Pending Tasks:\n";
-                    pendingTasks.forEach((task, index) => {
+                    pendingTasks.forEach((task, i) => {
                         const dueDate = new Date(task.dueDate);
-                        response += `${index + 1}. ${task.name} - Due: ${dueDate.toLocaleString('en-US', {
+                        response += `${i + 1}. ${task.name} - Due: ${dueDate.toLocaleString('en-US', {
                             hour: 'numeric',
                             minute: 'numeric',
                             hour12: true,
@@ -112,7 +112,7 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 if (completedTasks.length > 0) {
                     if (pendingTasks.length > 0) response += "\n";
                     response += "Completed Tasks:\n";
-                    completedTasks.slice(0, 3).forEach((task, index) => { // Show only the 3 most recent completed tasks
+                    completedTasks.slice(0, 3).forEach(task => { // Show only the 3 most recent completed tasks
                         response += `✓ ${task.name}\n`;
                     });
 
@@ -155,7 +155,8 @@ async function generateGeneralResponse(message: string) {
     return response.choices[0].message.content || "I'm not sure how to respond to that. Can you try again?";
 }
 
-const search_user_tasks = async (user_number: string) => {
+// Task-related database functions
+export const search_user_tasks = async (user_number: string) => {
     const tasks = await prisma.task.findMany({
         where: {
             user: {
@@ -169,8 +170,7 @@ const search_user_tasks = async (user_number: string) => {
     return tasks;
 };
 
-
-const create_task = async (task_name: string, task_description: string, task_due_date: string, user_number: string) => {
+export const create_task = async (task_name: string, task_description: string, task_due_date: string, user_number: string) => {
     const task = await prisma.task.create({
         data: {
             name: task_name,

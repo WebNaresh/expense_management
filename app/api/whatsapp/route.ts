@@ -33,43 +33,6 @@ async function sendInteractiveMessage(phoneNumber: string, header: string, body:
     }
 }
 
-// Message handling functions
-async function handleHelpCommand(senderNumber: string) {
-    return sendInteractiveMessage(
-        senderNumber,
-        "Expense Management Help",
-        "How can I assist you today?",
-        [
-            { id: "view_subscriptions", title: "View Subscriptions" },
-            { id: "add_expense", title: "Add Expense" },
-            { id: "payment_reminder", title: "Payment Reminders" }
-        ]
-    );
-}
-
-async function handleSubscriptionCommand(senderNumber: string) {
-    try {
-        const subscriptions = await fetchUserSubscriptions(senderNumber);
-
-        // Get user's name from the first subscription (if available)
-        let userName = "there";
-        if (subscriptions.length > 0 && subscriptions[0].user?.name) {
-            userName = subscriptions[0].user.name;
-        }
-
-        // Generate subscription summary
-        const subscriptionSummary = generateSubscriptionSummary(userName, subscriptions);
-        console.log(`User ${senderNumber} requested subscriptions: ${JSON.stringify(subscriptions)}`);
-
-        // Generate AI response
-        const aiResponse = await generateAIResponse(userName, subscriptionSummary);
-        return sendWhatsAppMessage(senderNumber, aiResponse || subscriptionSummary);
-    } catch (error) {
-        console.error('Error handling subscription command:', error);
-        return sendWhatsAppMessage(senderNumber, "Sorry, I couldn't retrieve your subscriptions at the moment. Please try again later.");
-    }
-}
-
 async function handleInteractiveResponse(senderNumber: string, interactionId: string) {
     console.log(`User ${senderNumber} clicked ${interactionId}`);
 
