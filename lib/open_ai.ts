@@ -1,5 +1,7 @@
+import { Task } from "@prisma/client";
 import { OpenAI } from "openai";
 import { prisma } from "./prisma";
+
 export const openai = new OpenAI({
     apiKey: process.env.NEXT_OPEN_AI_API_KEY,
 });
@@ -15,11 +17,14 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 Analyze the user's message and output ONLY ONE of these intents:
                 - CREATE_TASK: User wants to create a task (extract task_name and due_date)
                 - VIEW_TASKS: User wants to see their tasks
+                - VIEW_TODAYS_TASKS: User specifically wants to see today's tasks
+                - COMPLETE_TASK: User wants to mark a task as completed (extract task_name or task_index)
                 - OTHER: Any other query or conversation
                 
                 Format your response as a JSON object with these fields:
                 - intent: The detected intent
-                - task_name: (Only for CREATE_TASK) The name of the task
+                - task_name: (For CREATE_TASK or COMPLETE_TASK) The name of the task
+                - task_index: (For COMPLETE_TASK) The index or number of the task mentioned (if any)
                 - due_date: (Only for CREATE_TASK) The due date/time in ISO format
                 - confidence: A number between 0 and 1 indicating your confidence`
             },
@@ -124,6 +129,93 @@ export const handleIncomingMessage = async (message: string, user_number: string
                 return response;
             }
 
+            case "VIEW_TODAYS_TASKS": {
+                // Get today's start and end date
+                const today = new Date();
+                const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+                const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+                // Retrieve user's tasks for today
+                const todayTasks = await search_user_tasks_by_date(user_number, startOfDay, endOfDay);
+
+                if (todayTasks.length === 0) {
+                    return "You don't have any tasks scheduled for today.";
+                }
+
+                // Group tasks by completion status
+                const pendingTasks = todayTasks.filter(task => !task.isCompleted);
+                const completedTasks = todayTasks.filter(task => task.isCompleted);
+
+                // Format the response
+                let response = "📋 Today's Tasks:\n\n";
+
+                if (pendingTasks.length > 0) {
+                    response += "Pending Tasks:\n";
+                    pendingTasks.forEach((task, i) => {
+                        const dueDate = new Date(task.dueDate);
+                        response += `${i + 1}. ${task.name} - Due: ${dueDate.toLocaleString('en-US', {
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            hour12: true
+                        })}\n`;
+                    });
+                }
+
+                if (completedTasks.length > 0) {
+                    if (pendingTasks.length > 0) response += "\n";
+                    response += "Completed Tasks:\n";
+                    completedTasks.forEach(task => {
+                        response += `✓ ${task.name}\n`;
+                    });
+                }
+
+                return response;
+            }
+
+            case "COMPLETE_TASK": {
+                // Get the list of pending tasks
+                const tasks = await search_user_tasks(user_number);
+                const pendingTasks = tasks.filter(task => !task.isCompleted);
+
+                if (pendingTasks.length === 0) {
+                    return "You don't have any pending tasks to complete.";
+                }
+
+                // Variable to store the task to be completed
+                let taskToComplete: Task | undefined;
+
+                // Try to find the task by index first (if provided)
+                if (intentData.task_index) {
+                    const index = parseInt(intentData.task_index) - 1;
+                    if (index >= 0 && index < pendingTasks.length) {
+                        taskToComplete = pendingTasks[index];
+                    }
+                }
+
+                // If no task found by index, try to find by name
+                if (!taskToComplete && intentData.task_name) {
+                    const taskName = intentData.task_name.toLowerCase();
+                    taskToComplete = pendingTasks.find(task =>
+                        task.name.toLowerCase().includes(taskName)
+                    );
+                }
+
+                // If no task found, ask for clarification
+                if (!taskToComplete) {
+                    let response = "I couldn't identify which task you want to mark as completed. Here are your pending tasks:\n\n";
+                    pendingTasks.forEach((task, i) => {
+                        response += `${i + 1}. ${task.name}\n`;
+                    });
+                    response += "\nPlease specify which task to complete by name or number.";
+                    return response;
+                }
+
+                // Complete the task
+                await complete_task(taskToComplete.id);
+
+                return `✅ Task "${taskToComplete.name}" marked as completed!`;
+            }
+
             default:
                 return generateGeneralResponse(message);
         }
@@ -143,7 +235,7 @@ async function generateGeneralResponse(message: string) {
                 content: `You are a helpful WhatsApp assistant for an expense management app that can also handle tasks.
                 When responding:
                 1. Be concise and friendly
-                2. If the user mentions tasks, remind them they can use phrases like "add task to call Vivek at 10am" or "tell me my tasks"
+                2. If the user mentions tasks, remind them they can use phrases like "add task to call Vivek at 10am", "tell me my tasks", "show me today's tasks", or "mark task 1 as completed"
                 3. If the user mentions expenses or subscriptions, be helpful about those features
                 4. Keep responses brief and to the point
                 5. Sign off as "Expense Manager Bot"`
@@ -161,6 +253,24 @@ export const search_user_tasks = async (user_number: string) => {
         where: {
             user: {
                 whatsappNumber: user_number
+            }
+        },
+        orderBy: {
+            dueDate: 'asc'
+        }
+    });
+    return tasks;
+};
+
+export const search_user_tasks_by_date = async (user_number: string, startDate: Date, endDate: Date) => {
+    const tasks = await prisma.task.findMany({
+        where: {
+            user: {
+                whatsappNumber: user_number
+            },
+            dueDate: {
+                gte: startDate,
+                lte: endDate
             }
         },
         orderBy: {
@@ -200,7 +310,7 @@ const update_task = async (task_id: string, task_name: string, task_description:
     return task;
 };
 
-const complete_task = async (task_id: string) => {
+export const complete_task = async (task_id: string) => {
     const task = await prisma.task.update({
         where: {
             id: task_id
