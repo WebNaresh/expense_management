@@ -12,6 +12,8 @@ alwaysApply: true
 - Always use declared variables or remove them if unused
 - Remove unused function parameters to avoid TypeScript/ESLint warnings
 - Prefer destructuring of parameters and objects when appropriate
+- Always use `const` instead of `let` if the variable is never reassigned
+- Only use `let` when you need to reassign a variable later in the code
 
 ## Component Structure
 - Create functional components using TypeScript
