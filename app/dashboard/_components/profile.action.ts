@@ -28,15 +28,12 @@ export async function updateMobileNumber({ userId, mobileNumber }: UpdateMobileN
 
 export async function getUserTasks(userId: string) {
     try {
-        // Get current date to filter today's tasks
-        const today = new Date();
-        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
         // Fetch all user tasks
         const allTasks = await prisma.task.findMany({
             where: {
-                userId: userId
+                userId: userId,
+                isCompleted: false
             },
             orderBy: {
                 dueDate: 'asc'
@@ -47,10 +44,7 @@ export async function getUserTasks(userId: string) {
         const todayTasks = await prisma.task.findMany({
             where: {
                 userId: userId,
-                dueDate: {
-                    gte: startOfDay,
-                    lte: endOfDay
-                }
+                isCompleted: false
             },
             orderBy: {
                 dueDate: 'asc'
@@ -61,9 +55,7 @@ export async function getUserTasks(userId: string) {
         const upcomingTasks = await prisma.task.findMany({
             where: {
                 userId: userId,
-                dueDate: {
-                    gt: endOfDay
-                },
+
                 isCompleted: false
             },
             orderBy: {
