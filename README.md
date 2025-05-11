@@ -1,37 +1,27 @@
-# Financial Tracking System
+## Expense Management System
 
-A comprehensive system for tracking personal finances, including subscriptions, variable expenses, loans, and overall balance management.
+A streamlined task management system with user authentication, WhatsApp integration, and LinkedIn sharing capabilities.
 
 ## Features
 
 - **User Management**
 
   - Unique user identification with email
-  - Personal balance tracking
-  - Comprehensive transaction history
+  - WhatsApp integration for notifications
+  - LinkedIn integration for sharing updates
+  - Secure authentication with Google and LinkedIn
 
-- **Subscription Tracking**
+- **Task Management**
 
-  - Fixed monthly subscriptions (e.g., Cursory AI, ChatGPT)
-  - Billing date management
-  - Active/Inactive status tracking
+  - Track to-do items and reminders
+  - Set due dates
+  - Mark tasks as completed
+  - Organize tasks by priority
 
-- **Variable Expense Management**
-
-  - Flexible expense tracking (e.g., AWS bills)
-  - Categorization of expenses
-  - Date-based expense recording
-
-- **Loan Management**
-
-  - Track money borrowed and lent
-  - Loan status tracking (Pending/Paid/Cancelled)
-  - Detailed loan descriptions
-
-- **Balance Tracking**
-  - Real-time balance updates
-  - Total amount owed calculation
-  - Total amount received tracking
+- **Integration Features**
+  - WhatsApp integration for notifications and reminders
+  - LinkedIn integration for sharing accomplishments
+  - Multi-platform support
 
 ## Data Model
 
@@ -39,124 +29,141 @@ A comprehensive system for tracking personal finances, including subscriptions, 
 
 ```prisma
 model User {
-  id                String              @id @default(uuid())
-  name              String              @unique
-  email             String              @unique
-  takenLoans        Loan[]              // Loans taken from others
-  givenLoans        Loan[]              // Loans given to others
-  subscriptions     Subscription[]      // Monthly subscriptions
-  variableExpenses  VariableExpense[]   // Variable expenses like AWS
-  balance           Balance?            // Current financial status
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  whatsappVerified    Boolean   @default(false)
+  whatsappNumber      String?   @unique
+  linkedinAccessToken String?
+  linkedinTokenExpiry DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  tasks               Task[]
+
+  @@unique([whatsappNumber, email])
+  @@index([email])
+  @@index([whatsappNumber])
+  @@index([name])
 }
 ```
 
-### Subscription
+### Task
 
 ```prisma
-model Subscription {
-  id          String    @id
-  name        String    // e.g., "Cursory AI", "ChatGPT"
-  amount      Float     // Fixed monthly amount
-  isActive    Boolean   // Track active subscriptions
-  billingDate DateTime  // Monthly billing date
-  description String?   // Optional details
-}
-```
-
-### Variable Expense
-
-```prisma
-model VariableExpense {
-  id          String    @id
-  name        String    // e.g., "AWS"
-  amount      Float     // Variable amount
-  category    String    // Expense category
-  date        DateTime  // Transaction date
-  description String?   // Optional details
-}
-```
-
-### Loan
-
-```prisma
-model Loan {
-  id          String     @id
-  from        User       // Lender
-  to          User       // Borrower
-  amount      Float      // Loan amount
-  status      LoanStatus // PENDING/PAID/CANCELLED
-  description String?    // Loan purpose/details
-}
-```
-
-### Balance
-
-```prisma
-model Balance {
-  currentBalance  Float    // Available balance
-  totalOwed       Float    // Total amount owed
-  totalReceived   Float    // Total amount received
-  lastUpdated     DateTime // Last balance update
+model Task {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
 }
 ```
 
 ## Usage Examples
 
-### 1. Managing Subscriptions
+### 1. Managing Users
 
 ```typescript
-// Adding a new subscription
-const subscription = await prisma.subscription.create({
+// Creating a new user
+const user = await prisma.user.create({
   data: {
-    name: "Cursory AI",
-    amount: 1707.0,
-    isActive: true,
-    billingDate: new Date(),
+    name: "John Doe",
+    email: "john.doe@example.com",
+    whatsappVerified: false,
+  },
+});
+
+// Update user with WhatsApp verification
+const verifiedUser = await prisma.user.update({
+  where: {
+    email: "john.doe@example.com",
+  },
+  data: {
+    whatsappNumber: "+919876543210",
+    whatsappVerified: true,
+  },
+});
+```
+
+### 2. Managing Tasks
+
+```typescript
+// Creating a new task
+const task = await prisma.task.create({
+  data: {
+    name: "Complete project proposal",
+    description: "Finish the proposal document for the client meeting",
+    dueDate: new Date("2023-05-15"),
+    isCompleted: false,
+    user: {
+      connect: {
+        id: "user_id",
+      },
+    },
+  },
+});
+
+// Marking a task as completed
+const completedTask = await prisma.task.update({
+  where: {
+    id: "task_id",
+  },
+  data: {
+    isCompleted: true,
+    updatedAt: new Date(),
+  },
+});
+
+// Get all upcoming tasks for a user
+const upcomingTasks = await prisma.task.findMany({
+  where: {
     userId: "user_id",
+    isCompleted: false,
+    dueDate: {
+      gte: new Date(),
+    },
+  },
+  orderBy: {
+    dueDate: "asc",
   },
 });
 ```
 
-### 2. Recording Variable Expenses
+### 3. Social Media Integration
 
 ```typescript
-// Recording AWS bill
-const expense = await prisma.variableExpense.create({
+// Update user with LinkedIn access token
+const user = await prisma.user.update({
+  where: {
+    id: "user_id",
+  },
   data: {
-    name: "AWS",
-    amount: 2500.5,
-    category: "Cloud Services",
-    date: new Date(),
-    userId: "user_id",
+    linkedinAccessToken: "linkedin_access_token",
+    linkedinTokenExpiry: new Date(Date.now() + 3600 * 1000), // 1 hour expiry
   },
 });
-```
 
-### 3. Managing Loans
+// Check if LinkedIn token is valid
+const isLinkedInConnected = (user) => {
+  return (
+    user.linkedinAccessToken &&
+    user.linkedinTokenExpiry &&
+    new Date(user.linkedinTokenExpiry) > new Date()
+  );
+};
 
-```typescript
-// Recording a new loan
-const loan = await prisma.loan.create({
-  data: {
-    fromId: "lender_id",
-    toId: "borrower_id",
-    amount: 6000.0,
-    status: "PENDING",
-    description: "Bike purchase",
+// Update WhatsApp verification status
+const verifyWhatsApp = await prisma.user.update({
+  where: {
+    id: "user_id",
   },
-});
-```
-
-### 4. Tracking Balance
-
-```typescript
-// Updating user balance
-const balance = await prisma.balance.update({
-  where: { userId: "user_id" },
   data: {
-    currentBalance: 5000.0,
-    totalOwed: 2000.0,
-    totalReceived: 7000.0,
+    whatsappNumber: "+919876543210",
+    whatsappVerified: true,
   },
 });
 ```
@@ -167,49 +174,171 @@ const balance = await prisma.balance.update({
 
 ```bash
 git clone <repository-url>
+cd expense_management
 ```
 
 2. **Install Dependencies**
 
 ```bash
 npm install
+# or using yarn
+yarn install
 ```
 
 3. **Set Up Environment Variables**
-   Create a `.env` file:
+   Create a `.env` file with the following:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/db_name"
+# Database Connection - PostgreSQL on Neon
+# Format: postgresql://user:password@hostname:port/database
+DATABASE_URL="postgresql://[username]:[password]@[neon-hostname]/neondb"
+
+# NextAuth Configuration
+NEXTAUTH_URL="http://localhost:3000"  # Set to your deployment URL in production
+NEXT_PUBLIC_SECRET="your-nextauth-secret"
+
+# Google Authentication (OAuth)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="google-client-id-from-console"
+NEXT_PUBLIC_GOOGLE_CLIENT_SECRET="google-client-secret-from-console"
+
+# LinkedIn Authentication (OAuth)
+NEXT_LINKEDIN_CLIENT_ID="linkedin-client-id-from-developer-portal"
+NEXT_LINKEDIN_CLIENT_SECRET="linkedin-client-secret-from-developer-portal"
+
+# WhatsApp Integration
+WHATSAPP_VERIFY_TOKEN="your-whatsapp-verification-token"
 ```
+
+> Note: Never commit your `.env` file to version control. Add it to your `.gitignore` file.
 
 4. **Initialize Database**
 
 ```bash
-npx prisma migrate dev
+# Option 1: Push the schema directly without migrations (recommended for development)
+npx prisma db push
+
+# Option 2: Create migrations and apply them (better for production)
+npx prisma migrate dev --name init
+
+# Generate Prisma client (always required after schema changes)
+npx prisma generate
+
+# Optional: View your database with Prisma Studio
+npx prisma studio
 ```
 
-5. **Start the Application**
+> Note: If you're using Neon or another serverless PostgreSQL provider, you might need to use the pooled connection string from your provider.
+
+5. **Start the Development Server**
 
 ```bash
 npm run dev
+# or using yarn
+yarn dev
 ```
+
+6. **Access the Application**
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Deployment
+
+This application is designed to be easily deployed to Vercel:
+
+1. **Create a Vercel Account** (if you don't have one already)
+
+   - Sign up at [vercel.com](https://vercel.com)
+
+2. **Install Vercel CLI** (optional)
+
+   ```bash
+   npm install -g vercel
+   ```
+
+3. **Deploy from GitHub**
+
+   - Push your code to GitHub
+   - Import the repository in the Vercel dashboard
+   - Configure the following environment variables in the Vercel dashboard:
+     - `DATABASE_URL`: Your Neon database connection string
+     - `NEXTAUTH_URL`: Your Vercel deployment URL (e.g., https://your-app.vercel.app)
+     - `NEXT_PUBLIC_SECRET`: Your NextAuth secret
+     - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Your Google OAuth client ID
+     - `NEXT_PUBLIC_GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret
+     - `NEXT_LINKEDIN_CLIENT_ID`: Your LinkedIn OAuth client ID
+     - `NEXT_LINKEDIN_CLIENT_SECRET`: Your LinkedIn OAuth client secret
+     - `WHATSAPP_VERIFY_TOKEN`: Your WhatsApp verification token
+
+4. **Deploy from CLI** (alternative)
+
+   ```bash
+   vercel
+   ```
+
+5. **Enable Preview Deployments** (recommended)
+   - In the Vercel dashboard, configure preview deployments for pull requests
+
+For more deployment options, see the [Next.js deployment documentation](https://nextjs.org/docs/deployment).
+
+## Project Structure
+
+```
+expense_management/
+├── app/                      # Next.js App Router
+│   ├── api/                  # API routes
+│   │   ├── auth/             # Authentication endpoints
+│   │   ├── whatsapp/         # WhatsApp integration
+│   │   └── ...               # Other API endpoints
+│   ├── dashboard/            # Dashboard pages
+│   │   └── _components/      # Dashboard components
+│   ├── login/                # Authentication pages
+│   └── ...                   # Other app pages
+├── components/               # Reusable components
+│   ├── AppInputFields/       # Form components
+│   └── ui/                   # UI components (shadcn/ui)
+├── lib/                      # Utility functions
+│   ├── auth.ts               # Authentication configuration
+│   ├── prisma.ts             # Prisma client
+│   └── ...                   # Other utilities
+├── prisma/                   # Database configuration
+│   └── schema.prisma         # Database schema
+├── provider/                 # Context providers
+├── public/                   # Static assets
+└── types/                    # TypeScript type definitions
+```
+
+## Advanced Features
+
+### WhatsApp Integration
+
+The application includes WhatsApp integration for:
+
+- Receiving task reminders
+- Managing tasks via WhatsApp messages
+- Getting notification updates
+
+### LinkedIn Sharing
+
+Users can share their accomplishments on LinkedIn:
+
+- Connect LinkedIn account from the dashboard
+- Share task completions and milestones
+- Post achievements with customized privacy settings
 
 ## API Documentation
 
 The system exposes RESTful APIs for:
 
 - User management
-- Subscription handling
-- Expense tracking
-- Loan management
-- Balance updates
+- Task handling
+- WhatsApp integration
+- LinkedIn sharing
 
 Detailed API documentation is available in the `/docs` directory.
 
 ## Security
 
-- All financial data is stored securely in a PostgreSQL database
-- User authentication and authorization required for all operations
+- User data is stored securely in a PostgreSQL database
+- User authentication via Google and LinkedIn
 - Sensitive data is encrypted at rest
 
 ## Contributing
@@ -223,79 +352,3 @@ Detailed API documentation is available in the `/docs` directory.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## Structure
-
-1. **Subscriptions & Expenses:**
-   - Monthly fixed expenses (e.g., Cursory AI, ChatGPT, and AWS).
-2. **Loan Tracking:**
-   - Loans from friends or payments owed (e.g., Vivek's ₹6,000 for the bike, Aniket owes ₹6,000 to Vivek).
-3. **Balance Calculation:**
-   - Track how much you owe, how much you've received, and what your current balance is after all transactions.
-
----
-
-## Example
-
-Here's an example of how the system works with your given scenario:
-
-1. **Subscriptions:**
-   - **Cursory AI** subscription: ₹1,707/month
-   - **ChatGPT** subscription: ₹2,000/month
-   - **AWS bill:** Variable (depends on usage)
-2. **Loan Tracking:**
-   - Vivek gave you ₹6,000 for the bike.
-   - You contributed ₹4,000 for the bike.
-   - Aniket owes ₹6,000 to Vivek for the bike (not you).
-
-### Calculations:
-
-- You owe the monthly subscription costs.
-- You have received ₹6,000 from Vivek for the bike, and Aniket owes ₹6,000 to Vivek.
-- Keep track of monthly expenses, income (received from Vivek), and outstanding loan repayments.
-
----
-
-## Setup Instructions
-
-### Prerequisites
-
-- Node.js (if you are automating calculations via code)
-- A spreadsheet (optional, for manual tracking)
-
----
-
-### Manual Tracking Using Spreadsheet
-
-If you prefer a manual tracking system (using a spreadsheet):
-
-1. **Create a Spreadsheet** with the following columns:
-
-   - **Date:** The date of the transaction (e.g., subscription payment, loan received).
-   - **Description:** A short description (e.g., "Cursory AI subscription").
-   - **Amount Owed:** The amount you owe (for subscription payments).
-   - **Amount Received:** The amount you received (e.g., from Vivek for the bike).
-   - **Balance:** Track your balance after each transaction.
-
-2. **Tracking Example:**
-
-| Date       | Description          | Amount Owed | Amount Received | Balance          |
-| ---------- | -------------------- | ----------- | --------------- | ---------------- |
-| 01-05-2025 | Cursory AI           | ₹1,707      |                 | -₹1,707          |
-| 01-05-2025 | ChatGPT Subscription | ₹2,000      |                 | -₹3,707          |
-| 01-05-2025 | AWS Bill             | Variable    |                 | -₹[AWS]          |
-| 01-05-2025 | Vivek's Loan (Bike)  |             | ₹6,000          | ₹6,000           |
-| 01-05-2025 | Aniket's Repayment   | ₹6,000      |                 | ₹[final balance] |
-
----
-
-### Automated Tracking with Node.js
-
-If you want to automate this process using Node.js, follow these steps:
-
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-username/financial-tracking.git
-   ```
