@@ -147,7 +147,7 @@ export default function PrivacyPolicy() {
           </ul>
           <p className="text-gray-700 mt-4">
             To exercise these rights, please contact us using the information
-            provided in the "Contact Us" section.
+            provided in the &quot;Contact Us&quot; section.
           </p>
         </section>
 
@@ -167,8 +167,8 @@ export default function PrivacyPolicy() {
           <p className="text-gray-700">
             We may update our Privacy Policy from time to time. We will notify
             you of any changes by posting the new Privacy Policy on this page
-            and updating the "Last Updated" date. You are advised to review this
-            Privacy Policy periodically for any changes.
+            and updating the &quot;Last Updated&quot; date. You are advised to
+            review this Privacy Policy periodically for any changes.
           </p>
         </section>
 

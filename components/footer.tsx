@@ -1,7 +1,8 @@
 import Link from "next/link";
 import React from "react";
 
-type Props = {};
+// Define a proper Props type
+type Props = Record<string, never>;
 
 const Footer: React.FC<Props> = (props) => {
   return (
