@@ -1,4 +1,3 @@
-import { Wallet } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -12,7 +11,7 @@ const Footer: React.FC<Props> = (props) => {
           <div>
             <div className="flex items-center mb-4">
               <div className="bg-emerald-500 text-white p-2 rounded mr-2">
-                <Wallet className="w-6 h-6" />
+                <span className="font-bold">$</span>
               </div>
               <span className="text-xl font-bold text-white">SpendIt</span>
             </div>
