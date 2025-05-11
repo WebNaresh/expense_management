@@ -13,5 +13,6 @@ declare namespace NodeJS {
     NEXT_WHATSAPP_PHONE_NUMBER_ID: string;
     NEXT_LINKEDIN_CLIENT_ID: string;
     NEXT_LINKEDIN_CLIENT_SECRET: string;
+    NEXT_LINKEDIN_OAUTH_TOKEN: string;
   }
 }

@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LinkedinIcon } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -93,6 +93,13 @@ export default function LoginPage() {
                     </svg>
                     <span>Sign in with Google</span>
                   </div>
+                </Button>
+                <Button
+                  onClick={() => signIn("linkedin", { callbackUrl })}
+                  className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 font-medium border border-gray-300 shadow-sm"
+                >
+                  <LinkedinIcon className="w-5 h-5 mr-2" />
+                  <span>Sign in with LinkedIn</span>
                 </Button>
               </CardContent>
 

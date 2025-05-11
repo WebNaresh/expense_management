@@ -24,42 +24,27 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.NEXT_LINKEDIN_CLIENT_SECRET,
       authorization: {
         url: "https://www.linkedin.com/oauth/v2/authorization",
-        params: {
-          // scope: "w_member_social",
-          scope: "r_liteprofile r_emailaddress w_member_social",
-        },
+        params: { scope: "r_liteprofile" }
       },
-      accessTokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
-      profileUrl: "https://api.linkedin.com/v2/me",
-      async profile(profile, tokens) {
-        console.log(`🚀 ~ tokens:`, tokens);
-        console.log(`🚀 ~ profile:`, profile);
-
-        // Add a custom request to get email since it's not in the base profile
-        const emailRes = await fetch('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
-          headers: {
-            Authorization: `Bearer ${tokens.access_token}`,
-          },
-        });
-        const emailData = await emailRes.json();
-        const email = emailData?.elements?.[0]?.['handle~']?.emailAddress;
-
+      token: {
+        url: "https://www.linkedin.com/oauth/v2/accessToken",
+        params: { grant_type: "authorization_code" }
+      },
+      userinfo: {
+        url: "https://api.linkedin.com/v2/me",
+        params: { projection: "(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))" }
+      },
+      profile(profile) {
         return {
           id: profile.id,
           name: `${profile.localizedFirstName} ${profile.localizedLastName}`,
-          email: email,
-          image: profile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier || null,
-          // Return only properties expected by NextAuth
-          // The database fields will be populated in the signIn callback
+          email: null,
+          image: profile.profilePicture?.["displayImage~"]?.elements?.[0]?.identifiers?.[0]?.identifier || null,
         };
       },
     }),
   ],
   secret: process.env.NEXT_PUBLIC_SECRET,
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
   callbacks: {
     async signIn({ user, account }) {
       if (!user.email) return false;
@@ -101,7 +86,9 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, account }) {
+      console.log(`🚀 ~ account:`, account)
+      console.log(`🚀 ~ token:`, token)
       console.log(`🚀 ~ trigger:`, trigger)
       // Handle session update
       if (trigger === "update") {
