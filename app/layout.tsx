@@ -1,3 +1,4 @@
+import Footer from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import ApplicationClientWrapper from "@/provider/application.wrapper";
 import type { Metadata } from "next";
@@ -48,6 +49,7 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Toaster />
+          <Footer />
         </ApplicationClientWrapper>
       </body>
     </html>
