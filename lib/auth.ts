@@ -25,8 +25,8 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         url: "https://www.linkedin.com/oauth/v2/authorization",
         params: {
-          scope: "w_member_social",
-          // scope: "r_liteprofile r_emailaddress w_member_social",
+          // scope: "w_member_social",
+          scope: "r_liteprofile r_emailaddress w_member_social",
         },
       },
       accessTokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
