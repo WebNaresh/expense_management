@@ -175,7 +175,13 @@ export default function Dashboard() {
         </h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
           {!session?.user?.linkedinAccessToken ? (
-            <Button onClick={() => signIn("linkedin")}>
+            <Button
+              onClick={() =>
+                signIn("linkedin", {
+                  callbackUrl: "/dashboard",
+                })
+              }
+            >
               <LinkedinIcon className="mr-2 h-4 w-4" />
               <span>Connect with LinkedIn</span>
             </Button>

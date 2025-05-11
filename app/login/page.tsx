@@ -14,12 +14,19 @@ import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-
+  // call back is present redirect to callback
+  useEffect(() => {
+    if (callbackUrl) {
+      router.push(callbackUrl);
+    }
+  }, [callbackUrl]);
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow flex items-center justify-center p-4 bg-gray-50">
