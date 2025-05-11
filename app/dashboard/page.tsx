@@ -1,15 +1,14 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { ArrowUp } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { LinkedinIcon, Share2Icon } from "lucide-react";
+import { signIn, useSession } from "next-auth/react";
 import { useQueryState } from "nuqs";
-import { ActiveSubscriptions } from "./_components/active-subscriptions";
-import { AddExpenseDialog } from "./_components/add-expense-dialog";
-import { AddLoanDialog } from "./_components/add-loan-dialog";
-import { AddSubscriptionDialog } from "./_components/add-subscription-dialog";
-import { FinancialTrend } from "./_components/financial-trend";
-import { RecentTransactions } from "./_components/recent-transactions";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
+import { getUserTasks } from "./_components/profile.action";
+import { TaskSection } from "./_components/task-section";
 import { UpdateMobileDialog } from "./_components/update-mobile-dialog";
 import DashboardLoader from "./loader";
 
@@ -79,7 +78,7 @@ const transactionsData = [
 
 export default function Dashboard() {
   const { data: session, status, update } = useSession();
-  console.log(`🚀 ~ session:`, session);
+  const [isSharing, setIsSharing] = useState(false);
   const [isWhatsappConnected, setIsWhatsappConnected] = useQueryState(
     "isWhatsappConnected",
     {
@@ -88,7 +87,21 @@ export default function Dashboard() {
     }
   );
 
-  if (status === "loading") {
+  // Use React Query to fetch tasks
+  const { data: taskData, isLoading } = useQuery({
+    queryKey: ["tasks", session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      const result = await getUserTasks(session.user.id);
+      if (!result.success) {
+        throw new Error("Failed to fetch tasks");
+      }
+      return result.data;
+    },
+    enabled: !!session?.user?.id,
+  });
+
+  if (status === "loading" || isLoading) {
     return <DashboardLoader />;
   }
 
@@ -104,6 +117,56 @@ export default function Dashboard() {
     await update();
   };
 
+  // Function to share expense summary on LinkedIn
+  const shareToLinkedin = async () => {
+    if (!session?.user?.linkedinAccessToken) {
+      toast.error("Please connect your LinkedIn account first");
+      return;
+    }
+
+    setIsSharing(true);
+    try {
+      // Create a summary of expenses
+      const expenseSummary = `I've been tracking my expenses with this amazing app! This month, I've spent ₹${balanceData.balance} with a ${balanceData.change}% change from last month.`;
+
+      // Example of sharing a post to LinkedIn
+      const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.user.linkedinAccessToken}`,
+        },
+        body: JSON.stringify({
+          author: `urn:li:person:${session.user.id}`,
+          lifecycleState: "PUBLISHED",
+          specificContent: {
+            "com.linkedin.ugc.ShareContent": {
+              shareCommentary: {
+                text: expenseSummary,
+              },
+              shareMediaCategory: "NONE",
+            },
+          },
+          visibility: {
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+          },
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Successfully shared to LinkedIn!");
+      } else {
+        const error = await response.json();
+        toast.error(`Failed to share: ${error.message || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error sharing to LinkedIn:", error);
+      toast.error("Failed to share to LinkedIn");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -111,6 +174,21 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
+          {!session?.user?.linkedinAccessToken ? (
+            <Button onClick={() => signIn("linkedin")}>
+              <LinkedinIcon className="mr-2 h-4 w-4" />
+              <span>Connect with LinkedIn</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={shareToLinkedin}
+              disabled={isSharing}
+              variant="outline"
+            >
+              <Share2Icon className="mr-2 h-4 w-4" />
+              <span>{isSharing ? "Sharing..." : "Share Expense Summary"}</span>
+            </Button>
+          )}
           {session?.user && (
             <UpdateMobileDialog
               userId={session.user.id}
@@ -119,63 +197,26 @@ export default function Dashboard() {
               initiallyOpen={!session.user.whatsappNumber}
             />
           )}
-          <AddExpenseDialog />
-          <AddSubscriptionDialog
-            user={
-              session?.user
-                ? {
-                    id: session.user.id,
-                  }
-                : null
-            }
-          />
-          <AddLoanDialog />
         </div>
       </div>
 
-      <div className="flex flex-row flex-wrap gap-4 mb-6">
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-emerald-500 p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Your Balance</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold mb-2">
-              ₹{balanceData.balance.toLocaleString()}
-            </p>
-            <div className="flex items-center gap-1 text-sm text-emerald-600">
-              <ArrowUp className="h-4 w-4" />
-              <span>+{balanceData.change}% from last month</span>
-            </div>
-          </div>
-        </Card>
+      {/* Task Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TaskSection
+          todayTasks={taskData?.today ?? []}
+          upcomingTasks={taskData?.upcoming ?? []}
+        />
 
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-red-600 p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Money You Owe</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold">
-              ₹{summaryData.totalOwed.toLocaleString()}
+        {/* Additional dashboard cards can go here */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-6">Summary</h2>
+          <div className="space-y-4">
+            <p>This is a placeholder for additional dashboard content.</p>
+            <p className="text-sm text-gray-500">
+              Add financial summaries, charts, or other information here.
             </p>
           </div>
-        </Card>
-
-        <Card className="w-full overflow-hidden rounded-lg border p-0 max-w-sm">
-          <div className="bg-[#0A2647] p-4 rounded-t-lg">
-            <h3 className="text-lg font-medium text-white">Money to Collect</h3>
-          </div>
-          <div className="p-6">
-            <p className="text-4xl font-bold">
-              ₹{summaryData.totalReceived.toLocaleString()}
-            </p>
-          </div>
-        </Card>
-      </div>
-
-      <ActiveSubscriptions />
-      <div className="grid gap-6">
-        <FinancialTrend data={financialTrendData} />
-        <RecentTransactions transactions={transactionsData} />
+        </div>
       </div>
     </div>
   );

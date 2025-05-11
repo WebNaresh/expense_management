@@ -14,49 +14,21 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  name             String
-  email            String         @unique
-  whatsappVerified Boolean        @default(false)
-  whatsappNumber   String?        @unique
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  givenLoans       LoanModel[]    @relation("GivenLoans")
-  receivedLoans    LoanModel[]    @relation("ReceivedLoans")
-  subscriptions    Subscription[]
-  tasks            Task[]
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  whatsappVerified    Boolean   @default(false)
+  whatsappNumber      String?   @unique
+  linkedinAccessToken String?
+  linkedinTokenExpiry DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  tasks               Task[]
 
   @@unique([whatsappNumber, email])
   @@index([email])
   @@index([whatsappNumber])
   @@index([name])
-}
-
-model LoanModel {
-  id         String   @id @default(uuid())
-  name       String?
-  amount     Int
-  fromUser   User     @relation("GivenLoans", fields: [fromUserId], references: [id])
-  fromUserId String
-  toUser     User     @relation("ReceivedLoans", fields: [toUserId], references: [id])
-  toUserId   String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-model Subscription {
-  id                 String                    @id @default(uuid())
-  name               String
-  amount             Int
-  renewalDate        DateTime
-  currency           AppCurrency
-  renewInterval      SubscriptionRenewInterval @default(MONTHLY)
-  hasVariableCharges Boolean                   @default(false)
-  isActive           Boolean                   @default(true)
-  userId             String
-  user               User                      @relation(fields: [userId], references: [id])
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
 }
 
 model Task {

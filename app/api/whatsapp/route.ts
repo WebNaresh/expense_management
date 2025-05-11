@@ -1,7 +1,6 @@
-import { openai, handleIncomingMessage as processAIMessage } from "@/lib/open_ai";
+import { handleIncomingMessage as processAIMessage } from "@/lib/open_ai";
 import { prisma } from "@/lib/prisma";
 import { WhatsappMessageBuilder } from "@/lib/whatsapp_template_builder";
-import { AppCurrency } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 // Message sending utilities
@@ -19,32 +18,14 @@ async function sendWhatsAppMessage(phoneNumber: string, message: string) {
     }
 }
 
-async function sendInteractiveMessage(phoneNumber: string, header: string, body: string, buttons: { id: string, title: string }[]) {
-    try {
-        const messageBuilder = new WhatsappMessageBuilder(phoneNumber)
-            .setInteractiveButtons(header, body, buttons);
 
-        const response = await messageBuilder.sendMessage();
-        console.log("Interactive message sent successfully:", response);
-        return true;
-    } catch (error) {
-        console.error("Error sending interactive WhatsApp message:", error);
-        return false;
-    }
-}
 
 async function handleInteractiveResponse(senderNumber: string, interactionId: string) {
     console.log(`User ${senderNumber} clicked ${interactionId}`);
 
     try {
         switch (interactionId) {
-            case 'view_subscriptions': {
-                const subscriptions = await fetchUserSubscriptions(senderNumber);
-                const subscriptionList = subscriptions.length > 0
-                    ? subscriptions.map(sub => `- ${sub.name}: ${getCurrencySymbol(sub.currency)}${sub.amount} (renewal: ${new Date(sub.renewalDate).toLocaleDateString()})`).join('\n')
-                    : 'You have no active subscriptions.';
-                return sendWhatsAppMessage(senderNumber, `Your subscriptions:\n${subscriptionList}`);
-            }
+
 
             case 'add_expense':
                 return sendWhatsAppMessage(senderNumber, "To add an expense, please visit the app or reply with the expense details in this format: 'expense: [amount] for [description]'");
@@ -76,108 +57,6 @@ async function handleIncomingMessage(senderNumber: string, messageContent: strin
     }
 }
 
-// Helper functions
-async function fetchUserSubscriptions(phoneNumber: string) {
-    return prisma.subscription.findMany({
-        where: {
-            user: {
-                whatsappNumber: phoneNumber
-            }
-        },
-        select: {
-            name: true,
-            amount: true,
-            renewalDate: true,
-            currency: true,
-            user: {
-                select: {
-                    name: true,
-                    email: true,
-                    whatsappNumber: true,
-                }
-            }
-        }
-    });
-}
-
-function getCurrencySymbol(currency: AppCurrency): string {
-    const currencySymbols: Record<string, string> = {
-        'INR': '₹',
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£'
-    };
-
-    return currencySymbols[currency] || currency;
-}
-
-function generateSubscriptionSummary(userName: string, subscriptions: any[]) {
-    if (subscriptions.length === 0) {
-        return `Hi ${userName}! You don't have any active subscriptions yet.`;
-    }
-
-    // Group subscriptions by currency
-    const subscriptionsByCurrency: Record<string, any[]> = {};
-    subscriptions.forEach(sub => {
-        const currency = sub.currency || 'INR';
-        if (!subscriptionsByCurrency[currency]) {
-            subscriptionsByCurrency[currency] = [];
-        }
-        subscriptionsByCurrency[currency].push(sub);
-    });
-
-    // Generate formatted lists and totals
-    const formattedLists: string[] = [];
-    const totalAmounts: string[] = [];
-
-    Object.entries(subscriptionsByCurrency).forEach(([currency, subs]) => {
-        const symbol = getCurrencySymbol(currency as AppCurrency);
-        const totalAmount = subs.reduce((sum, sub) => sum + sub.amount, 0);
-
-        const formattedList = subs.map(
-            sub => `- ${sub.name}: ${symbol}${sub.amount} (renews on ${new Date(sub.renewalDate).toLocaleDateString()})`
-        ).join('\n');
-
-        formattedLists.push(formattedList);
-        totalAmounts.push(`Total ${currency} spending: ${symbol}${totalAmount}`);
-    });
-
-    return `Hi ${userName}! Here are your active subscriptions:\n\n${formattedLists.join('\n\n')}\n\n${totalAmounts.join('\n')}`;
-}
-
-async function generateAIResponse(userName: string, subscriptionSummary: string) {
-    try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a helpful WhatsApp bot for an expense management app. 
-                    When responding about subscriptions:
-                    1. Be concise and friendly
-                    2. Address the user by their name
-                    3. Focus on providing information about the subscriptions
-                    4. Maintain the correct currency symbols for each subscription (₹ for INR, $ for USD, etc.)
-                    5. If there are multiple currencies, mention the total for each currency separately
-                    6. If there are no subscriptions, suggest how to add one
-                    7. Avoid phrases like "I'm an AI" or "As an AI"
-                    8. Don't ask questions about what the user wants - just provide the subscription info
-                    9. Sign off as "Expense Manager Bot"`
-                },
-                {
-                    role: "user",
-                    content: `A user named "${userName}" has asked about their subscriptions. Here is their subscription data: ${subscriptionSummary}. 
-                    Please provide a helpful, concise response addressing them by name and maintaining the correct currency formats.`
-                }
-            ]
-        });
-
-        return response.choices[0].message.content || null;
-    } catch (error) {
-        console.error('Error generating AI response:', error);
-        return null;
-    }
-}
 
 // Webhook verification endpoint
 export async function GET(request: NextRequest) {

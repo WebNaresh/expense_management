@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth"; // Import User type if needed
 import Google from "next-auth/providers/google";
-
+import LinkedIn from "next-auth/providers/linkedin";
 // Ensure required environment variables are set
 if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) throw new Error('Missing GOOGLE_CLIENT_ID');
 if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET) throw new Error('Missing GOOGLE_CLIENT_SECRET');
@@ -19,6 +19,40 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
       clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
     }),
+    LinkedIn({
+      clientId: process.env.NEXT_LINKEDIN_CLIENT_ID,
+      clientSecret: process.env.NEXT_LINKEDIN_CLIENT_SECRET,
+      authorization: {
+        url: "https://www.linkedin.com/oauth/v2/authorization",
+        params: {
+          scope: "r_liteprofile r_emailaddress w_member_social",
+        },
+      },
+      accessTokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
+      profileUrl: "https://api.linkedin.com/v2/me",
+      async profile(profile, tokens) {
+        console.log(`🚀 ~ tokens:`, tokens);
+        console.log(`🚀 ~ profile:`, profile);
+
+        // Add a custom request to get email since it's not in the base profile
+        const emailRes = await fetch('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+          },
+        });
+        const emailData = await emailRes.json();
+        const email = emailData?.elements?.[0]?.['handle~']?.emailAddress;
+
+        return {
+          id: profile.id,
+          name: `${profile.localizedFirstName} ${profile.localizedLastName}`,
+          email: email,
+          image: profile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier || null,
+          // Return only properties expected by NextAuth
+          // The database fields will be populated in the signIn callback
+        };
+      },
+    }),
   ],
   secret: process.env.NEXT_PUBLIC_SECRET,
   session: {
@@ -26,7 +60,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       if (!user.email) return false;
 
       try {
@@ -44,6 +78,18 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: username,
               whatsappVerified: false,
+            },
+          });
+        }
+
+        // If signing in with LinkedIn, store the access token
+        if (account?.provider === 'linkedin') {
+          await prisma.user.update({
+            where: { email: user.email },
+            data: {
+              // Now we can use proper types since the schema has been updated
+              linkedinAccessToken: account.access_token,
+              linkedinTokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : null,
             },
           });
         }
@@ -84,7 +130,10 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.whatsappNumber = dbUser.whatsappNumber || null;
           token.whatsappVerified = dbUser.whatsappVerified;
-          // Add any other fields from the Prisma User model that are needed in the session
+
+          // Add LinkedIn tokens from the database
+          token.linkedinAccessToken = dbUser.linkedinAccessToken || null;
+          token.linkedinTokenExpiry = dbUser.linkedinTokenExpiry || null;
         }
       }
       return token;
@@ -97,6 +146,8 @@ export const authOptions: NextAuthOptions = {
           id: token.id as string,
           whatsappNumber: token.whatsappNumber as string | null,
           whatsappVerified: token.whatsappVerified as boolean,
+          linkedinAccessToken: token.linkedinAccessToken as string | null,
+          linkedinTokenExpiry: token.linkedinTokenExpiry as Date | null,
         },
       };
     },
@@ -132,7 +183,24 @@ declare module "next-auth" {
       image?: string | null;
       whatsappNumber: string | null;
       whatsappVerified: boolean;
+      linkedinAccessToken?: string | null;
+      linkedinTokenExpiry?: Date | null;
     }
+  }
+
+  // Modify the User type for profile callbacks
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    // Optional fields for database (these won't be required in profile callbacks)
+    whatsappNumber?: string | null;
+    whatsappVerified?: boolean;
+    linkedinAccessToken?: string | null;
+    linkedinTokenExpiry?: Date | null;
+    createdAt?: Date;
+    updatedAt?: Date;
   }
 }
 
@@ -142,5 +210,7 @@ declare module "next-auth/jwt" {
     id: string;
     whatsappNumber: string | null;
     whatsappVerified: boolean;
+    linkedinAccessToken?: string | null;
+    linkedinTokenExpiry?: Date | null;
   }
 }
