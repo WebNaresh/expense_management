@@ -1,43 +1,41 @@
 import { prisma } from "@/lib/prisma";
 import type { NextAuthOptions } from "next-auth";
-import { getServerSession } from "next-auth"; // Import User type if needed
-import Google from "next-auth/providers/google";
+import { getServerSession } from "next-auth";
 import LinkedIn from "next-auth/providers/linkedin";
-// Ensure required environment variables are set
-
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    Google({
-      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-      clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
-    }),
     LinkedIn({
-      clientId: process.env.NEXT_LINKEDIN_CLIENT_ID,
-      clientSecret: process.env.NEXT_LINKEDIN_CLIENT_SECRET,
+      clientId: process.env.NEXT_LINKEDIN_CLIENT_ID!,
+      clientSecret: process.env.NEXT_LINKEDIN_CLIENT_SECRET!,
       authorization: {
+        url: "https://www.linkedin.com/oauth/v2/authorization",
         params: {
-          scope: 'w_member_social',
+          scope: "openid profile email w_member_social",
         },
       },
-    }),
+      token: "https://www.linkedin.com/oauth/v2/accessToken",
+      issuer: "https://www.linkedin.com/oauth",
+      jwks_endpoint: "https://www.linkedin.com/oauth/openid/jwks",
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name || `${profile.given_name} ${profile.family_name}`,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
+    })
+
   ],
   secret: process.env.NEXT_PUBLIC_SECRET,
   callbacks: {
     async signIn({ user, account }) {
-      console.log(`🚀 ~ account signIn:`, account)
+      console.log(`🚀 ~ account signIn:`, account);
       if (!user.email) return false;
-      console.log(`🚀 ~ user:`, user)
-      // NEXT_LINKEDIN_CLIENT_ID
-
-
+      console.log(`🚀 ~ user:`, user);
       try {
-        // Try to find existing user
-        let dbUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-
-        // If user doesn't exist, create new user
+        let dbUser = await prisma.user.findUnique({ where: { email: user.email } });
         if (!dbUser) {
           const username = user.name?.replace(/\s+/g, '_').toLowerCase() || `user_${Date.now()}`;
           dbUser = await prisma.user.create({
@@ -48,8 +46,6 @@ export const authOptions: NextAuthOptions = {
             },
           });
         }
-
-
         return true;
       } catch (error) {
         console.error("Error in signIn callback:", error);
@@ -57,43 +53,31 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, user, trigger, account }) {
-      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_ID:`, process.env.NEXT_LINKEDIN_CLIENT_ID)
-      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_SECRET:`, process.env.NEXT_LINKEDIN_CLIENT_SECRET)
-      console.log(`🚀 ~ process.env.NEXTAUTH_URL:`, process.env.NEXTAUTH_URL)
-      console.log(`🚀 ~ { token, user, trigger, account }:`, { token, user, trigger, account })
+      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_ID:`, process.env.NEXT_LINKEDIN_CLIENT_ID);
+      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_SECRET:`, process.env.NEXT_LINKEDIN_CLIENT_SECRET);
+      console.log(`🚀 ~ process.env.NEXTAUTH_URL:`, process.env.NEXTAUTH_URL);
+      console.log(`🚀 ~ { token, user, trigger, account }:`, { token, user, trigger, account });
 
-      // Handle session update
+      if (account?.provider === "linkedin") {
+        token.linkedinAccessToken = account.access_token;
+        token.linkedinTokenExpiry = account.expires_at ? new Date(account.expires_at * 1000) : null;
+      }
+
       if (trigger === "update") {
-        // Fetch the latest user data from the database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-        });
-
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (dbUser) {
-          // Update token with the latest user data
           token.whatsappNumber = dbUser.whatsappNumber || null;
           token.whatsappVerified = dbUser.whatsappVerified;
-          // Add any other fields that need to be updated
         }
-
         return token;
       }
 
       if (user) {
-        // Find the user in database with all fields
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
         if (dbUser) {
-          // Add all user information to the token
           token.id = dbUser.id;
           token.whatsappNumber = dbUser.whatsappNumber || null;
           token.whatsappVerified = dbUser.whatsappVerified;
-
-          // Add LinkedIn tokens from the database
-          token.linkedinAccessToken = dbUser.linkedinAccessToken || null;
-          token.linkedinTokenExpiry = dbUser.linkedinTokenExpiry || null;
         }
       }
       return token;
@@ -118,11 +102,9 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user }) {
-      // Log successful sign-ins
       console.log(`User signed in: ${user.email}`);
     },
     async signOut({ token }) {
-      // Log sign-outs
       console.log(`User signed out: ${token.email}`);
     },
   },
@@ -133,7 +115,6 @@ export async function auth() {
   return session;
 }
 
-// Add type for the extended session
 declare module "next-auth" {
   interface Session {
     user: {
@@ -145,16 +126,14 @@ declare module "next-auth" {
       whatsappVerified: boolean;
       linkedinAccessToken?: string | null;
       linkedinTokenExpiry?: Date | null;
-    }
+    };
   }
 
-  // Modify the User type for profile callbacks
   interface User {
     id: string;
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    // Optional fields for database (these won't be required in profile callbacks)
     whatsappNumber?: string | null;
     whatsappVerified?: boolean;
     linkedinAccessToken?: string | null;
@@ -164,7 +143,6 @@ declare module "next-auth" {
   }
 }
 
-// Add type for the extended JWT token
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;

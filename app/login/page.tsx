@@ -63,7 +63,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button
-                  onClick={() => signIn("google", { callbackUrl })}
+                  onClick={() => signIn("linkedin", { callbackUrl })}
                   className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 font-medium border border-gray-300 shadow-sm"
                 >
                   <div className="flex items-center justify-center">

@@ -91,7 +91,7 @@ export default function HomePage() {
   const handleGetStarted = async () => {
     console.log("Getting started");
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("linkedin", { callbackUrl: "/dashboard" });
     } catch (error) {
       console.error("Error signing in:", error);
     }

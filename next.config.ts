@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/a/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'media.licdn.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

@@ -225,7 +225,7 @@ export function Navbar() {
               <Button
                 variant="outline"
                 onClick={() =>
-                  signIn("google", {
+                  signIn("lin", {
                     redirect: false,
                     callbackUrl: "/dashboard",
                   })
@@ -349,7 +349,7 @@ export function Navbar() {
                       variant="outline"
                       className="w-full"
                       onClick={() => {
-                        signIn("google", {
+                        signIn("linkedin", {
                           callbackUrl: "/dashboard",
                         });
                         setIsOpen(false);
