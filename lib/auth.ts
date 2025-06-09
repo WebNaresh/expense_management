@@ -4,14 +4,7 @@ import { getServerSession } from "next-auth"; // Import User type if needed
 import Google from "next-auth/providers/google";
 import LinkedIn from "next-auth/providers/linkedin";
 // Ensure required environment variables are set
-if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) throw new Error('Missing GOOGLE_CLIENT_ID');
-if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET) throw new Error('Missing GOOGLE_CLIENT_SECRET');
-if (!process.env.NEXT_PUBLIC_SECRET) throw new Error('Missing NEXT_PUBLIC_SECRET');
 
-// Ensure NEXT_AUTH_URL is set in production
-if (process.env.NODE_ENV === 'production' && !process.env.NEXT_AUTH_URL) {
-  throw new Error('Missing NEXT_AUTH_URL in production environment');
-}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -23,38 +16,26 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.NEXT_LINKEDIN_CLIENT_ID,
       clientSecret: process.env.NEXT_LINKEDIN_CLIENT_SECRET,
       authorization: {
-        url: "https://www.linkedin.com/oauth/v2/authorization",
-        params: { scope: "r_liteprofile" }
-      },
-      token: {
-        url: "https://www.linkedin.com/oauth/v2/accessToken",
-        params: { grant_type: "authorization_code" }
-      },
-      userinfo: {
-        url: "https://api.linkedin.com/v2/me",
-        params: { projection: "(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))" }
-      },
-      profile(profile) {
-        return {
-          id: profile.id,
-          name: `${profile.localizedFirstName} ${profile.localizedLastName}`,
-          email: null,
-          image: profile.profilePicture?.["displayImage~"]?.elements?.[0]?.identifiers?.[0]?.identifier || null,
-        };
+        params: {
+          scope: 'w_member_social',
+        },
       },
     }),
   ],
   secret: process.env.NEXT_PUBLIC_SECRET,
   callbacks: {
     async signIn({ user, account }) {
+      console.log(`🚀 ~ account signIn:`, account)
       if (!user.email) return false;
+      console.log(`🚀 ~ user:`, user)
+      // NEXT_LINKEDIN_CLIENT_ID
+
 
       try {
         // Try to find existing user
         let dbUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
-        console.log(`🚀 ~ dbUser:`, dbUser)
 
         // If user doesn't exist, create new user
         if (!dbUser) {
@@ -68,17 +49,6 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-        // If signing in with LinkedIn, store the access token
-        if (account?.provider === 'linkedin') {
-          await prisma.user.update({
-            where: { email: user.email },
-            data: {
-              // Now we can use proper types since the schema has been updated
-              linkedinAccessToken: account.access_token,
-              linkedinTokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : null,
-            },
-          });
-        }
 
         return true;
       } catch (error) {
@@ -87,9 +57,11 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, user, trigger, account }) {
-      console.log(`🚀 ~ account:`, account)
-      console.log(`🚀 ~ token:`, token)
-      console.log(`🚀 ~ trigger:`, trigger)
+      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_ID:`, process.env.NEXT_LINKEDIN_CLIENT_ID)
+      console.log(`🚀 ~ process.env.NEXT_LINKEDIN_CLIENT_SECRET:`, process.env.NEXT_LINKEDIN_CLIENT_SECRET)
+      console.log(`🚀 ~ process.env.NEXTAUTH_URL:`, process.env.NEXTAUTH_URL)
+      console.log(`🚀 ~ { token, user, trigger, account }:`, { token, user, trigger, account })
+
       // Handle session update
       if (trigger === "update") {
         // Fetch the latest user data from the database
